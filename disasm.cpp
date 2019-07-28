@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "disasm.h"
+
 // get 8-bit signed int
 static int int8(uint16_t i)
 {
@@ -103,10 +105,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		sprintf(result->string, "bf 0x%016llx", d);
 	}
 
-	// 10001111dddddddd "bf/s label"
+	// 10001111dddddddd "bf.s label"
 	else if((insword & 0xff00) == 0x8f00) {
 		uint64_t d = displ2ea(2, int8(insword & 0xff), addr);
 		result->opcode = OPC_BF;
+		result->delay_slot = true;
 		sprintf(result->string, "bf.s 0x%016llx", d);
 	}
 
@@ -145,10 +148,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		sprintf(result->string, "bt 0x%016llx", d);
 	}
 
-	// 10001101dddddddd "bt/s label"
+	// 10001101dddddddd "bt.s label"
 	else if((insword & 0xff00) == 0x8d00) {
 		uint64_t d = displ2ea(2, int8(insword & 0xff), addr);
 		result->opcode = OPC_BT;
+		result->delay_slot = true;
 		sprintf(result->string, "bt.s 0x%016llx", d);
 	}
 
@@ -606,6 +610,7 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->delay_slot = true;
 		sprintf(result->string, "fmov.s @(r0,r%d),fr%d", m, n);
 	}
 
@@ -614,6 +619,7 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->delay_slot = true;
 		sprintf(result->string, "fmov.s @r%d+,fr%d", m, n);
 	}
 
@@ -622,6 +628,7 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->delay_slot = true;
 		sprintf(result->string, "fmov.s @r%d,fr%d", m, n);
 	}
 
@@ -630,6 +637,7 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->delay_slot = true;
 		sprintf(result->string, "fmov.s fr%d,@(r0,r%d)", m, n);
 	}
 
@@ -638,6 +646,7 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->delay_slot = true;
 		sprintf(result->string, "fmov.s fr%d,@-r%d", m, n);
 	}
 
@@ -646,6 +655,7 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->delay_slot = true;
 		sprintf(result->string, "fmov.s fr%d,@r%d", m, n);
 	}
 

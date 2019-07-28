@@ -1,5 +1,6 @@
 enum SH4_OPC {
-	OPC_ADD=0, OPC_ADDC, OPC_ADDV, OPC_AND, OPC_BF, OPC_BRA, OPC_BRAF, OPC_BSR,
+	OPC_NONE=0,
+	OPC_ADD, OPC_ADDC, OPC_ADDV, OPC_AND, OPC_BF, OPC_BRA, OPC_BRAF, OPC_BSR,
 	OPC_BSRF, OPC_BT, OPC_CLRMAC, OPC_CLRS, OPC_CLRT, OPC_CMP, OPC_DIV0S,
 	OPC_DIV0U, OPC_DIV1, OPC_DMULS, OPC_DMULU, OPC_DT, OPC_ERROR, OPC_EXTS,
 	OPC_EXTU, OPC_FABS, OPC_FADD, OPC_FCMP, OPC_FCNVDS, OPC_FCNVSD, OPC_FDIV,
@@ -23,7 +24,8 @@ struct disasm_result
 {
 	enum SH4_OPC opcode;
 	enum SH4_LEN_SUFFIX length_suffix;
-	char string[128];
+	bool delay_slot;
+	char string[32];
 };
 
 int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result);

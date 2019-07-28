@@ -76,11 +76,12 @@ int main(int ac, char **av)
 	struct disasm_result dr;
 	char resultA[128], resultB[128];
 	uint32_t addr = 0;
+	int maxlen = 0;
 
 	for(uint16_t insword=0; 1; insword++) {
 		/* result a is us */
 		int rc = disasm(addr, insword, &dr);
-		strcpy(resultA, dr->string);
+		strcpy(resultA, dr.string);
 		/* result b is them */
 		get_disasm_libopcodes(addr, (uint8_t *)&insword, 2, resultB);
 
@@ -102,8 +103,11 @@ int main(int ac, char **av)
 		bool match = false;
 		if(rc == -1 && strncmp(resultB, ".word", 5) == 0)
 			match = true;
-		if(strcmp(resultA, resultB) == 0)
+		if(strcmp(resultA, resultB) == 0) {
+			int tmp = strlen(resultA);
+			if(tmp > maxlen) maxlen = tmp;
 			match = true;
+		}
 
 		/* bail */
 		if(!match) {
@@ -113,4 +117,6 @@ int main(int ac, char **av)
 
 		if(insword == 0xFFFF) break;
 	}
+
+	printf("maximum length string is: %d\n", maxlen);
 }
