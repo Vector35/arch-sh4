@@ -43,11 +43,18 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	int rc = 0;
 	char buff[128];
 
+	const char *cr2str[5] = {"sr","gbr","vbr","ssr","spc"};
+	enum SH4_REGISTER cr2id[5] = {SR,GBR,VBR,SSR,SPC};
+
 	// 0111nnnniiiiiiii "add #imm,Rn"
 	if((insword & 0xf000) == 0x7000) {
 		int16_t i = int8(insword & 0xff);
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_ADD;
+		result->operands[0].type = IMMEDIATE;
+		result->operands[0].immediate = i;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "add #%d,r%d", i, n);
 	}
 
@@ -56,6 +63,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_ADD;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "add r%d,r%d", m, n);
 	}
 
@@ -64,6 +75,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_ADDC;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "addc r%d,r%d", m, n);
 	}
 
@@ -72,6 +87,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_ADDV;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "addv r%d,r%d", m, n);
 	}
 
@@ -79,6 +98,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xff00) == 0xc900) {
 		int16_t i = int8(insword & 0xff);
 		result->opcode = OPC_AND;
+		result->operands[0].type = IMMEDIATE;
+		result->operands[0].immediate = i;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
 		sprintf(result->string, "and #%d,r0", i);
 	}
 
@@ -87,6 +110,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_AND;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "and r%d,r%d", m, n);
 	}
 
@@ -95,6 +122,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		int16_t i = int8(insword & 0xff);
 		result->opcode = OPC_AND;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = IMMEDIATE;
+		result->operands[0].immediate = i;
+		result->operands[1].type = DEREF_REG_REG;
+		result->operands[1].regA = (SH4_REGISTER)(GBR);
+		result->operands[1].regB = R0;
 		sprintf(result->string, "and.b #%d,@(r0,gbr)", i);
 	}
 
@@ -102,6 +134,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xff00) == 0x8b00) {
 		uint64_t d = displ2ea(2, int8(insword & 0xff), addr);
 		result->opcode = OPC_BF;
+		result->operands[0].type = ADDRESS;
+		result->operands[0].immediate = d;
 		sprintf(result->string, "bf 0x%016llx", d);
 	}
 
@@ -110,6 +144,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint64_t d = displ2ea(2, int8(insword & 0xff), addr);
 		result->opcode = OPC_BF;
 		result->delay_slot = true;
+		result->operands[0].type = ADDRESS;
+		result->operands[0].immediate = d;
 		sprintf(result->string, "bf.s 0x%016llx", d);
 	}
 
@@ -117,6 +153,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf000) == 0xa000) {
 		uint64_t d = displ2ea(2, int12(insword & 0xfff), addr);
 		result->opcode = OPC_BRA;
+		result->operands[0].type = ADDRESS;
+		result->operands[0].immediate = d;
 		sprintf(result->string, "bra 0x%016llx", d);
 	}
 
@@ -124,6 +162,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x23) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_BRAF;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
 		sprintf(result->string, "braf r%d", m);
 	}
 
@@ -131,6 +171,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf000) == 0xb000) {
 		uint64_t d = displ2ea(2, int12(insword & 0xfff), addr);
 		result->opcode = OPC_BSR;
+		result->operands[0].type = ADDRESS;
+		result->operands[0].immediate = d;
 		sprintf(result->string, "bsr 0x%016llx", d);
 	}
 
@@ -138,6 +180,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x3) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_BSRF;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
 		sprintf(result->string, "bsrf r%d", m);
 	}
 
@@ -145,6 +189,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xff00) == 0x8900) {
 		uint64_t d = displ2ea(2, int8(insword & 0xff), addr);
 		result->opcode = OPC_BT;
+		result->operands[0].type = ADDRESS;
+		result->operands[0].immediate = d;
 		sprintf(result->string, "bt 0x%016llx", d);
 	}
 
@@ -153,6 +199,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint64_t d = displ2ea(2, int8(insword & 0xff), addr);
 		result->opcode = OPC_BT;
 		result->delay_slot = true;
+		result->operands[0].type = ADDRESS;
+		result->operands[0].immediate = d;
 		sprintf(result->string, "bt.s 0x%016llx", d);
 	}
 
@@ -178,6 +226,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xff00) == 0x8800) {
 		int16_t i = int8(insword & 0xff);
 		result->opcode = OPC_CMP;
+		result->operands[0].type = IMMEDIATE;
+		result->operands[0].immediate = i;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
 		sprintf(result->string, "cmp/eq #%d,r0", i);
 	}
 
@@ -186,6 +238,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_CMP;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "cmp/eq r%d,r%d", m, n);
 	}
 
@@ -194,6 +250,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_CMP;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "cmp/ge r%d,r%d", m, n);
 	}
 
@@ -202,6 +262,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_CMP;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "cmp/gt r%d,r%d", m, n);
 	}
 
@@ -210,6 +274,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_CMP;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "cmp/hi r%d,r%d", m, n);
 	}
 
@@ -218,6 +286,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_CMP;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "cmp/hs r%d,r%d", m, n);
 	}
 
@@ -225,6 +297,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4015) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_CMP;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "cmp/pl r%d", n);
 	}
 
@@ -232,6 +306,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4011) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_CMP;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "cmp/pz r%d", n);
 	}
 
@@ -240,6 +316,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_CMP;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "cmp/str r%d,r%d", m, n);
 	}
 
@@ -248,6 +328,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_DIV0S;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "div0s r%d,r%d", m, n);
 	}
 
@@ -262,6 +346,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_DIV1;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "div1 r%d,r%d", m, n);
 	}
 
@@ -271,6 +359,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_DMULS;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "dmuls.l r%d,r%d", m, n);
 	}
 
@@ -280,6 +372,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_DMULU;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "dmulu.l r%d,r%d", m, n);
 	}
 
@@ -287,6 +383,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4010) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_DT;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "dt r%d", n);
 	}
 
@@ -296,6 +394,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_EXTS;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "exts.b r%d,r%d", m, n);
 	}
 
@@ -305,6 +407,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_EXTS;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "exts.w r%d,r%d", m, n);
 	}
 
@@ -314,6 +420,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_EXTU;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "extu.b r%d,r%d", m, n);
 	}
 
@@ -323,6 +433,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_EXTU;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "extu.w r%d,r%d", m, n);
 	}
 
@@ -330,6 +444,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf1ff) == 0xf05d) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FABS;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fabs fr%d", n);
 	}
 
@@ -337,6 +453,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0xf05d) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FABS;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fabs fr%d", n);
 	}
 
@@ -345,6 +463,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xF0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FADD;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fadd fr%d,fr%d", m, n);
 	}
 
@@ -353,6 +475,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FADD;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fadd fr%d,fr%d", m, n);
 	}
 
@@ -361,6 +487,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FCMP;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fcmp/eq fr%d,fr%d", m, n);
 	}
 
@@ -369,6 +499,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FCMP;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fcmp/eq fr%d,fr%d", m, n);
 	}
 
@@ -377,6 +511,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FCMP;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fcmp/gt fr%d,fr%d", m, n);
 	}
 
@@ -385,6 +523,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FCMP;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fcmp/gt fr%d,fr%d", m, n);
 	}
 
@@ -392,6 +534,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf1ff) == 0xf0bd) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_FCNVDS;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(DR0 + m);
+		result->operands[1].type = SYSREG;
+		result->operands[1].regA = (SH4_REGISTER)(FPUL);
 		sprintf(result->string, "fcnvds dr%d,fpul", m);
 	}
 
@@ -399,6 +545,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf1ff) == 0xf0ad) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FCNVSD;
+		result->operands[0].type = SYSREG;
+		result->operands[0].regA = (SH4_REGISTER)(FPUL);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(DR0 + n);
 		sprintf(result->string, "fcnvsd fpul,dr%d", n);
 	}
 
@@ -407,6 +557,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FDIV;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fdiv fr%d,fr%d", m, n);
 	}
 
@@ -415,6 +569,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FDIV;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fdiv fr%d,fr%d", m, n);
 	}
 
@@ -423,6 +581,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0x300)>>8;
 		uint16_t n = (insword & 0xc00)>>10;
 		result->opcode = OPC_FIPR;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FV0 + 4*m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FV0 + 4*n);
 		sprintf(result->string, "fipr fv%d,fv%d", 4*m, 4*n);
 	}
 
@@ -430,6 +592,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0xf08d) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FLDI0;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fldi0 fr%d", n);
 	}
 
@@ -437,6 +601,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0xf09d) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FLDI1;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fldi1 fr%d", n);
 	}
 
@@ -444,6 +610,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0xf01d) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_FLDS;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = SYSREG;
+		result->operands[1].regA = (SH4_REGISTER)(FPUL);
 		sprintf(result->string, "flds fr%d,fpul", m);
 	}
 
@@ -451,6 +621,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf1ff) == 0xf02d) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FLOAT;
+		result->operands[0].type = SYSREG;
+		result->operands[0].regA = (SH4_REGISTER)(FPUL);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "float fpul,fr%d", n);
 	}
 
@@ -458,6 +632,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0xf02d) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FLOAT;
+		result->operands[0].type = SYSREG;
+		result->operands[0].regA = (SH4_REGISTER)(FPUL);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "float fpul,fr%d", n);
 	}
 
@@ -466,6 +644,12 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMAC;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[2].type = FPUREG;
+		result->operands[2].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmac fr0,fr%d,fr%d", m, n);
 	}
 
@@ -474,6 +658,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmov fr%d,fr%d", m, n);
 	}
 
@@ -482,6 +670,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmov fr%d,fr%d", m, n);
 	}
 
@@ -490,6 +682,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmov fr%d,fr%d", m, n);
 	}
 
@@ -498,6 +694,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(XD0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmov XD%d,fr%d", m, n);
 	}
 
@@ -506,6 +706,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(XD0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmov XD%d,fr%d", m, n);
 	}
 
@@ -514,6 +718,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].type = DEREF_REG_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0);
+		result->operands[0].regB = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmov @(r0,r%d),fr%d", m, n);
 	}
 
@@ -522,6 +731,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].type = DEREF_REG_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0);
+		result->operands[0].regB = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmov @(r0,r%d),fr%d", m, n);
 	}
 
@@ -530,6 +744,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmov @r%d+,fr%d", m, n);
 	}
 
@@ -538,6 +757,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmov @r%d+,fr%d", m, n);
 	}
 
@@ -546,6 +770,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmov @r%d,fr%d", m, n);
 	}
 
@@ -554,6 +782,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xF00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmov @r%d,fr%d", m, n);
 	}
 
@@ -562,6 +794,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = DEREF_REG_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
+		result->operands[1].regB = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "fmov fr%d,@(r0,r%d)", m, n);
 	}
 
@@ -570,6 +807,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "fmov fr%d,@-r%d", m, n);
 	}
 
@@ -578,6 +820,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "fmov fr%d,@r%d", m, n);
 	}
 
@@ -586,6 +832,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = DEREF_REG_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
+		result->operands[1].regB = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "fmov fr%d,@(r0,r%d)", m, n);
 	}
 
@@ -594,6 +845,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "fmov fr%d,@-r%d", m, n);
 	}
 
@@ -602,6 +858,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "fmov fr%d,@r%d", m, n);
 	}
 
@@ -611,6 +871,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
 		result->delay_slot = true;
+		result->operands[0].type = DEREF_REG_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0);
+		result->operands[0].regB = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmov.s @(r0,r%d),fr%d", m, n);
 	}
 
@@ -620,6 +885,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
 		result->delay_slot = true;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmov.s @r%d+,fr%d", m, n);
 	}
 
@@ -629,6 +899,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
 		result->delay_slot = true;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmov.s @r%d,fr%d", m, n);
 	}
 
@@ -638,6 +912,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
 		result->delay_slot = true;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = DEREF_REG_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
+		result->operands[1].regB = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "fmov.s fr%d,@(r0,r%d)", m, n);
 	}
 
@@ -647,6 +926,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
 		result->delay_slot = true;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "fmov.s fr%d,@-r%d", m, n);
 	}
 
@@ -656,6 +940,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMOV;
 		result->delay_slot = true;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "fmov.s fr%d,@r%d", m, n);
 	}
 
@@ -664,6 +952,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xF0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMUL;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmul fr%d,fr%d", m, n);
 	}
 
@@ -672,6 +964,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FMUL;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fmul fr%d,fr%d", m, n);
 	}
 
@@ -679,6 +975,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf1ff) == 0xf04d) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FNEG;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fneg fr%d", n);
 	}
 
@@ -686,6 +984,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0xf04d) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FNEG;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fneg fr%d", n);
 	}
 
@@ -705,6 +1005,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf1ff) == 0xf06d) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FSQRT;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fsqrt fr%d", n);
 	}
 
@@ -712,6 +1014,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0xf06d) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FSQRT;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fsqrt fr%d", n);
 	}
 
@@ -719,6 +1023,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0xf00d) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FSTS;
+		result->operands[0].type = SYSREG;
+		result->operands[0].regA = (SH4_REGISTER)(FPUL);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fsts fpul,fr%d", n);
 	}
 
@@ -727,6 +1035,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xF0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FSUB;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fsub fr%d,fr%d", m, n);
 	}
 
@@ -735,6 +1047,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_FSUB;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		sprintf(result->string, "fsub fr%d,fr%d", m, n);
 	}
 
@@ -742,6 +1058,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf1ff) == 0xf03d) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_FTRC;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = SYSREG;
+		result->operands[1].regA = (SH4_REGISTER)(FPUL);
 		sprintf(result->string, "ftrc fr%d,fpul", m);
 	}
 
@@ -749,6 +1069,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0xf03d) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_FTRC;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
+		result->operands[1].type = SYSREG;
+		result->operands[1].regA = (SH4_REGISTER)(FPUL);
 		sprintf(result->string, "ftrc fr%d,fpul", m);
 	}
 
@@ -756,6 +1080,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf3ff) == 0xf1fd) {
 		uint16_t n = (insword & 0xc00)>>10;
 		result->opcode = OPC_FTRV;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(XMTRX);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(FV0 + 4*n);
 		sprintf(result->string, "ftrv xmtrx,fv%d", 4*n);
 	}
 
@@ -763,6 +1091,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x402b) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_JMP;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
 		sprintf(result->string, "jmp @r%d", m);
 	}
 
@@ -770,6 +1100,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x400b) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_JSR;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
 		sprintf(result->string, "jsr @r%d", m);
 	}
 
@@ -778,6 +1110,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = CTRLREG;
+		result->operands[1].regA = (SH4_REGISTER)(DBR);
 		sprintf(result->string, "ldc.l @r%d+,dbr", m);
 	}
 
@@ -785,6 +1122,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x40fa) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDC;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = CTRLREG;
+		result->operands[1].regA = (SH4_REGISTER)(DBR);
 		sprintf(result->string, "ldc r%d,dbr", m);
 	}
 
@@ -792,6 +1133,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x401e) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDC;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = CTRLREG;
+		result->operands[1].regA = (SH4_REGISTER)(GBR);
 		sprintf(result->string, "ldc r%d,gbr", m);
 	}
 
@@ -800,6 +1145,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		uint16_t n = (insword & 0x70)>>4;
 		result->opcode = OPC_LDC;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = BANKREG;
+		result->operands[1].regA = (SH4_REGISTER)(BANKREG + n);
 		sprintf(result->string, "ldc r%d,r%d_bank", m, n);
 	}
 
@@ -807,6 +1156,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x404e) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDC;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = CTRLREG;
+		result->operands[1].regA = (SH4_REGISTER)(SPC);
 		sprintf(result->string, "ldc r%d,spc", m);
 	}
 
@@ -814,6 +1167,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x400e) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDC;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = CTRLREG;
+		result->operands[1].regA = (SH4_REGISTER)(SR);
 		sprintf(result->string, "ldc r%d,sr", m);
 	}
 
@@ -821,6 +1178,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x403e) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDC;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = CTRLREG;
+		result->operands[1].regA = (SH4_REGISTER)(SSR);
 		sprintf(result->string, "ldc r%d,ssr", m);
 	}
 
@@ -829,6 +1190,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x403A) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDC;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = CTRLREG;
+		result->operands[1].regA = (SH4_REGISTER)(SGR);
 		sprintf(result->string, "ldc r%d,sgr", m);
 	}
 
@@ -836,6 +1201,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x402e) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDC;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = CTRLREG;
+		result->operands[1].regA = (SH4_REGISTER)(VBR);
 		sprintf(result->string, "ldc r%d,vbr", m);
 	}
 
@@ -844,6 +1213,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = CTRLREG;
+		result->operands[1].regA = (SH4_REGISTER)(DBR);
 		sprintf(result->string, "ldc.l @r%d+,dbr", m);
 	}
 
@@ -853,12 +1227,20 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		uint16_t n = (insword & 0xf0)>>4;
 		if(n < 5) {
-			const char *lookup[5] = {"sr","gbr","vbr","ssr","spc"};
 			result->opcode = OPC_LDC;
-			sprintf(result->string, "ldc r%d,%s", m, lookup[n]);
+			result->operands[0].type = GPREG;
+			result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+			result->operands[1].type = CTRLREG;
+			result->operands[1].regA = cr2id[n];
+
+			sprintf(result->string, "ldc r%d,%s", m, cr2str[n]);
 		}
 		else {
 			result->opcode = OPC_LDC;
+			result->operands[0].type = GPREG;
+			result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+			result->operands[1].type = BANKREG;
+			result->operands[1].regA = (SH4_REGISTER)(BANKREG + n);
 			sprintf(result->string, "ldc r%d,r%d_bank", m, n);
 		}
 	}
@@ -868,6 +1250,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = CTRLREG;
+		result->operands[1].regA = (SH4_REGISTER)(GBR);
 		sprintf(result->string, "ldc.l @r%d+,gbr", m);
 	}
 
@@ -877,6 +1264,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0x70)>>4;
 		result->opcode = OPC_LDC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = BANKREG;
+		result->operands[1].regA = (SH4_REGISTER)(BANKREG + n);
 		sprintf(result->string, "ldc.l @r%d+,r%d_bank", m, n);
 	}
 
@@ -885,6 +1277,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = CTRLREG;
+		result->operands[1].regA = (SH4_REGISTER)(SPC);
 		sprintf(result->string, "ldc.l @r%d+,spc", m);
 	}
 
@@ -893,6 +1290,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = CTRLREG;
+		result->operands[1].regA = (SH4_REGISTER)(SR);
 		sprintf(result->string, "ldc.l @r%d+,sr", m);
 	}
 
@@ -901,6 +1303,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = CTRLREG;
+		result->operands[1].regA = (SH4_REGISTER)(SSR);
 		sprintf(result->string, "ldc.l @r%d+,ssr", m);
 	}
 
@@ -910,6 +1317,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = CTRLREG;
+		result->operands[1].regA = (SH4_REGISTER)(SGR);
 		sprintf(result->string, "ldc.l @r%d+,sgr", m);
 	}
 
@@ -918,6 +1330,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = CTRLREG;
+		result->operands[1].regA = (SH4_REGISTER)(VBR);
 		sprintf(result->string, "ldc.l @r%d+,vbr", m);
 	}
 
@@ -927,14 +1344,24 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		uint16_t n = (insword & 0xf0)>>4;
 		if(n < 5) {
-			const char *lookup[5] = {"sr","gbr","vbr","ssr","spc"};
 			result->opcode = OPC_LDC;
 			result->length_suffix = LEN_SUFFIX_L;
-			sprintf(result->string, "ldc.l @r%d+,%s", m, lookup[n]);
+			result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+			result->operands[0].type = DEREF_REG;
+			result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+			result->operands[1].type = CTRLREG;
+			result->operands[1].regA = cr2id[n];
+
+			sprintf(result->string, "ldc.l @r%d+,%s", m, cr2str[n]);
 		}
 		else {
 			result->opcode = OPC_LDC;
 			result->length_suffix = LEN_SUFFIX_L;
+			result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+			result->operands[0].type = DEREF_REG;
+			result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+			result->operands[1].type = BANKREG;
+			result->operands[1].regA = (SH4_REGISTER)(BANKREG + n);
 			sprintf(result->string, "ldc.l @r%d+,r%d_bank", m, n);
 		}
 	}
@@ -943,6 +1370,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x406a) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDS;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = SYSREG;
+		result->operands[1].regA = (SH4_REGISTER)(FPSCR);
 		sprintf(result->string, "lds r%d,fpscr", m);
 	}
 
@@ -950,6 +1381,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x405a) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDS;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = SYSREG;
+		result->operands[1].regA = (SH4_REGISTER)(FPUL);
 		sprintf(result->string, "lds r%d,fpul", m);
 	}
 
@@ -957,6 +1392,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x400a) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDS;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = SYSREG;
+		result->operands[1].regA = (SH4_REGISTER)(MACH);
 		sprintf(result->string, "lds r%d,mach", m);
 	}
 
@@ -964,6 +1403,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x401a) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDS;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = SYSREG;
+		result->operands[1].regA = (SH4_REGISTER)(MACL);
 		sprintf(result->string, "lds r%d,macl", m);
 	}
 
@@ -971,6 +1414,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x402a) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDS;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = SYSREG;
+		result->operands[1].regA = (SH4_REGISTER)(PR);
 		sprintf(result->string, "lds r%d,pr", m);
 	}
 
@@ -979,6 +1426,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDS;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = SYSREG;
+		result->operands[1].regA = (SH4_REGISTER)(FPSCR);
 		sprintf(result->string, "lds.l @r%d+,fpscr", m);
 	}
 
@@ -987,6 +1439,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDS;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = SYSREG;
+		result->operands[1].regA = (SH4_REGISTER)(FPUL);
 		sprintf(result->string, "lds.l @r%d+,fpul", m);
 	}
 
@@ -995,6 +1452,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDS;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = SYSREG;
+		result->operands[1].regA = (SH4_REGISTER)(MACH);
 		sprintf(result->string, "lds.l @r%d+,mach", m);
 	}
 
@@ -1003,6 +1465,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDS;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = SYSREG;
+		result->operands[1].regA = (SH4_REGISTER)(MACL);
 		sprintf(result->string, "lds.l @r%d+,macl", m);
 	}
 
@@ -1011,6 +1478,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_LDS;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = SYSREG;
+		result->operands[1].regA = (SH4_REGISTER)(PR);
 		sprintf(result->string, "lds.l @r%d+,pr", m);
 	}
 
@@ -1026,6 +1498,12 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MAC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mac.l @r%d+,@r%d+", m, n);
 	}
 
@@ -1035,6 +1513,12 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MAC;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mac.w @r%d+,@r%d+", m, n);
 	}
 
@@ -1043,6 +1527,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		int16_t i = int8(insword & 0xff);
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
+		result->operands[0].type = IMMEDIATE;
+		result->operands[0].immediate = i;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov #%d,r%d", i, n);
 	}
 
@@ -1051,6 +1539,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov r%d,r%d", m, n);
 	}
 
@@ -1060,6 +1552,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = DEREF_REG_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0);
+		result->operands[0].regB = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.b @(r0,r%d),r%d", m, n);
 	}
 
@@ -1068,6 +1565,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t d = insword & 0xff;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = DEREF_REG_IMM;
+		result->operands[0].regA = (SH4_REGISTER)(GBR);
+		result->operands[0].displacement = d;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
 		sprintf(result->string, "mov.b @(%d,gbr),r0", d);
 	}
 
@@ -1077,6 +1579,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = DEREF_REG_IMM;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + d);
+		result->operands[0].displacement = R0 + m;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
 		sprintf(result->string, "mov.b @(%d,r%d),r0", d, m);
 	}
 
@@ -1086,6 +1593,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.b @r%d+,r%d", m, n);
 	}
 
@@ -1095,6 +1607,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.b @r%d,r%d", m, n);
 	}
 
@@ -1103,6 +1619,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t d = insword & 0xff;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0);
+		result->operands[1].type = DEREF_REG_IMM;
+		result->operands[1].regA = (SH4_REGISTER)(GBR);
+		result->operands[1].displacement = d;
 		sprintf(result->string, "mov.b r0,@(%d,gbr)", d);
 	}
 
@@ -1112,6 +1633,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf0)>>4;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0);
+		result->operands[1].type = DEREF_REG_IMM;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + d);
+		result->operands[1].displacement = R0 + n;
 		sprintf(result->string, "mov.b r0,@(%d,r%d)", d, n);
 	}
 
@@ -1121,6 +1647,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = DEREF_REG_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
+		result->operands[1].regB = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.b r%d,@(r0,r%d)", m, n);
 	}
 
@@ -1130,6 +1661,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.b r%d,@-r%d", m, n);
 	}
 
@@ -1139,6 +1675,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.b r%d,@r%d", m, n);
 	}
 
@@ -1148,6 +1688,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = DEREF_REG_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0);
+		result->operands[0].regB = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.l @(r0,r%d),r%d", m, n);
 	}
 
@@ -1156,6 +1701,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t d = insword & 0xff;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = DEREF_REG_IMM;
+		result->operands[0].regA = (SH4_REGISTER)(GBR);
+		result->operands[0].displacement = 4*d;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
 		sprintf(result->string, "mov.l @(%d,gbr),r0", 4*d);
 	}
 
@@ -1165,6 +1715,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = ADDRESS;
+		result->operands[0].immediate = d;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.l 0x%016llx,r%d", d, n);
 	}
 
@@ -1175,6 +1729,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = DEREF_REG_IMM;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + 4*d);
+		result->operands[0].displacement = R0 + m;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.l @(%d,r%d),r%d", 4*d, m, n);
 	}
 
@@ -1184,6 +1743,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.l @r%d+,r%d", m, n);
 	}
 
@@ -1193,6 +1757,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.l @r%d,r%d", m, n);
 	}
 
@@ -1201,6 +1769,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t d = insword & 0xff;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0);
+		result->operands[1].type = DEREF_REG_IMM;
+		result->operands[1].regA = (SH4_REGISTER)(GBR);
+		result->operands[1].displacement = 4*d;
 		sprintf(result->string, "mov.l r0,@(%d,gbr)", 4*d);
 	}
 
@@ -1210,6 +1783,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = DEREF_REG_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
+		result->operands[1].regB = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.l r%d,@(r0,r%d)", m, n);
 	}
 
@@ -1220,6 +1798,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = DEREF_REG_IMM;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + 4*d);
+		result->operands[1].displacement = R0 + n;
 		sprintf(result->string, "mov.l r%d,@(%d,r%d)", m, 4*d, n);
 	}
 
@@ -1229,6 +1812,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.l r%d,@-r%d", m, n);
 	}
 
@@ -1238,6 +1826,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.l r%d,@r%d", m, n);
 	}
 
@@ -1247,6 +1839,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].type = DEREF_REG_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0);
+		result->operands[0].regB = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.w @(r0,r%d),r%d", m, n);
 	}
 
@@ -1255,6 +1852,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t d = insword & 0xff;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].type = DEREF_REG_IMM;
+		result->operands[0].regA = (SH4_REGISTER)(GBR);
+		result->operands[0].displacement = 2*d;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
 		sprintf(result->string, "mov.w @(%d,gbr),r0", 2*d);
 	}
 
@@ -1264,6 +1866,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].type = IMMEDIATE;
+		result->operands[0].immediate = d;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.w 0x%016x,r%d", d, n);
 	}
 
@@ -1273,6 +1879,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].type = DEREF_REG_IMM;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + 2*d);
+		result->operands[0].displacement = R0 + m;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
 		sprintf(result->string, "mov.w @(%d,r%d),r0", 2*d,m);
 	}
 
@@ -1282,6 +1893,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.w @r%d+,r%d", m, n);
 	}
 
@@ -1291,6 +1907,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.w @r%d,r%d", m, n);
 	}
 
@@ -1299,6 +1919,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t d = insword & 0xff;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0);
+		result->operands[1].type = DEREF_REG_IMM;
+		result->operands[1].regA = (SH4_REGISTER)(GBR);
+		result->operands[1].displacement = 2*d;
 		sprintf(result->string, "mov.w r0,@(%d,gbr)", 2*d);
 	}
 
@@ -1308,6 +1933,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf0)>>4;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0);
+		result->operands[1].type = DEREF_REG_IMM;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + 2*d);
+		result->operands[1].displacement = R0 + n;
 		sprintf(result->string, "mov.w r0,@(%d,r%d)", 2*d, n);
 	}
 
@@ -1317,6 +1947,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = DEREF_REG_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
+		result->operands[1].regB = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.w r%d,@(r0,r%d)", m, n);
 	}
 
@@ -1326,6 +1961,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.w r%d,@-r%d", m, n);
 	}
 
@@ -1335,6 +1975,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mov.w r%d,@r%d", m, n);
 	}
 
@@ -1342,6 +1986,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xff00) == 0xc700) {
 		uint64_t d = displ2ea(4, insword & 0xff, addr);
 		result->opcode = OPC_MOVA;
+		result->operands[0].type = ADDRESS;
+		result->operands[0].immediate = d;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
 		sprintf(result->string, "mova 0x%016llx,r0", d);
 	}
 
@@ -1350,6 +1998,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOVCA;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0);
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "movca.l r0,@r%d", n);
 	}
 
@@ -1357,6 +2009,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x29) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOVT;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "movt r%d", n);
 	}
 
@@ -1366,6 +2020,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MUL;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mul.l r%d,r%d", m, n);
 	}
 
@@ -1375,6 +2033,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MULS;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "muls.w r%d,r%d", m, n);
 	}
 
@@ -1384,6 +2046,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MULU;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "mulu.w r%d,r%d", m, n);
 	}
 
@@ -1392,6 +2058,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_NEG;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "neg r%d,r%d", m, n);
 	}
 
@@ -1400,6 +2070,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_NEGC;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "negc r%d,r%d", m, n);
 	}
 
@@ -1414,6 +2088,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_NOT;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "not r%d,r%d", m, n);
 	}
 
@@ -1421,6 +2099,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x93) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_OCBI;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "ocbi @r%d", n);
 	}
 
@@ -1428,6 +2108,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0xa3) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_OCBP;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "ocbp @r%d", n);
 	}
 
@@ -1435,6 +2117,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0xb3) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_OCBWB;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "ocbwb @r%d", n);
 	}
 
@@ -1442,6 +2126,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xff00) == 0xcb00) {
 		int16_t i = int8(insword & 0xff);
 		result->opcode = OPC_OR;
+		result->operands[0].type = IMMEDIATE;
+		result->operands[0].immediate = i;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
 		sprintf(result->string, "or #%d,r0", i);
 	}
 
@@ -1450,6 +2138,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_OR;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "or r%d,r%d", m, n);
 	}
 
@@ -1458,6 +2150,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		int16_t i = int8(insword & 0xff);
 		result->opcode = OPC_OR;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = IMMEDIATE;
+		result->operands[0].immediate = i;
+		result->operands[1].type = DEREF_REG_REG;
+		result->operands[1].regA = (SH4_REGISTER)(GBR);
+		result->operands[1].regB = R0;
 		sprintf(result->string, "or.b #%d,@(r0,gbr)", i);
 	}
 
@@ -1465,6 +2162,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x83) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_PREF;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "pref @r%d", n);
 	}
 
@@ -1472,6 +2171,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4024) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_ROTCL;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "rotcl r%d", n);
 	}
 
@@ -1479,6 +2180,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4025) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_ROTCR;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "rotcr r%d", n);
 	}
 
@@ -1486,6 +2189,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4004) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_ROTL;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "rotl r%d", n);
 	}
 
@@ -1493,6 +2198,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4005) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_ROTR;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "rotr r%d", n);
 	}
 
@@ -1525,6 +2232,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SHAD;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "shad r%d,r%d", m, n);
 	}
 
@@ -1532,6 +2243,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4020) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SHAL;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "shal r%d", n);
 	}
 
@@ -1539,6 +2252,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4021) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SHAR;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "shar r%d", n);
 	}
 
@@ -1547,6 +2262,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SHLD;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "shld r%d,r%d", m, n);
 	}
 
@@ -1554,6 +2273,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4000) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SHLL;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "shll r%d", n);
 	}
 
@@ -1561,6 +2282,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4028) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SHLL16;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "shll16 r%d", n);
 	}
 
@@ -1568,6 +2291,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4008) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SHLL2;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "shll2 r%d", n);
 	}
 
@@ -1575,6 +2300,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4018) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SHLL8;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "shll8 r%d", n);
 	}
 
@@ -1582,6 +2309,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4001) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SHLR;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "shlr r%d", n);
 	}
 
@@ -1589,6 +2318,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4029) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SHLR16;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "shlr16 r%d", n);
 	}
 
@@ -1596,6 +2327,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4009) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SHLR2;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "shlr2 r%d", n);
 	}
 
@@ -1603,6 +2336,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x4019) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SHLR8;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "shlr8 r%d", n);
 	}
 
@@ -1617,6 +2352,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		uint16_t m = (insword & 0x70)>>4;
 		result->opcode = OPC_STC;
+		result->operands[0].type = BANKREG;
+		result->operands[0].regA = (SH4_REGISTER)(BANKREG + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc r%d_bank,r%d", m, n);
 	}
 
@@ -1624,6 +2363,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0xfa) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
+		result->operands[0].type = CTRLREG;
+		result->operands[0].regA = (SH4_REGISTER)(DBR);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc dbr,r%d", n);
 	}
 
@@ -1631,6 +2374,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x12) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
+		result->operands[0].type = CTRLREG;
+		result->operands[0].regA = (SH4_REGISTER)(GBR);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc gbr,r%d", n);
 	}
 
@@ -1638,6 +2385,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x3a) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
+		result->operands[0].type = CTRLREG;
+		result->operands[0].regA = (SH4_REGISTER)(SGR);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc sgr,r%d", n);
 	}
 
@@ -1645,6 +2396,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x42) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
+		result->operands[0].type = CTRLREG;
+		result->operands[0].regA = (SH4_REGISTER)(SPC);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc spc,r%d", n);
 	}
 
@@ -1652,6 +2407,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x2) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
+		result->operands[0].type = CTRLREG;
+		result->operands[0].regA = (SH4_REGISTER)(SR);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc sr,r%d", n);
 	}
 
@@ -1659,6 +2418,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x32) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
+		result->operands[0].type = CTRLREG;
+		result->operands[0].regA = (SH4_REGISTER)(SSR);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc ssr,r%d", n);
 	}
 
@@ -1666,6 +2429,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x22) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
+		result->operands[0].type = CTRLREG;
+		result->operands[0].regA = (SH4_REGISTER)(VBR);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc vbr,r%d", n);
 	}
 
@@ -1675,6 +2442,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0x70)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
+		result->operands[0].type = BANKREG;
+		result->operands[0].regA = (SH4_REGISTER)(BANKREG + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc r%d_bank,r%d", m, n);
 	}
 
@@ -1684,12 +2455,19 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0x70)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		if(m < 5) {
-			const char *lookup[5] = {"sr","gbr","vbr","ssr","spc"};
 			result->opcode = OPC_STC;
-			sprintf(result->string, "stc %s,r%d", lookup[m], n);
+			result->operands[0].type = GPREG;
+			result->operands[0].regA = (SH4_REGISTER)(R0 + n);
+			result->operands[1].type = GPREG;
+			result->operands[1].regA = (SH4_REGISTER)(R0 + cr2id[m]);
+			sprintf(result->string, "stc %s,r%d", cr2str[m], n);
 		}
 		else {
 			result->opcode = OPC_STC;
+			result->operands[0].type = BANKREG;
+			result->operands[0].regA = (SH4_REGISTER)(BANKREG + m);
+			result->operands[1].type = GPREG;
+			result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 			sprintf(result->string, "stc r%d_bank,r%d", m, n);
 		}
 	}
@@ -1699,6 +2477,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = CTRLREG;
+		result->operands[0].regA = (SH4_REGISTER)(DBR);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc.l dbr,@-r%d", n);
 	}
 
@@ -1707,6 +2490,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = CTRLREG;
+		result->operands[0].regA = (SH4_REGISTER)(GBR);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc.l gbr,@-r%d", n);
 	}
 
@@ -1716,6 +2504,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = BANKREG;
+		result->operands[0].regA = (SH4_REGISTER)(BANKREG + m);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc.l r%d_bank,@-r%d", m, n);
 	}
 
@@ -1725,14 +2518,23 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0x70)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		if(m < 5) {
-			const char *lookup[5] = {"sr","gbr","vbr","ssr","spc"};
 			result->opcode = OPC_STC;
 			result->length_suffix = LEN_SUFFIX_L;
-			sprintf(result->string, "stc.l %s,@-r%d", lookup[m], n);
+			result->operands[0].type = CTRLREG;
+			result->operands[0].regA = (SH4_REGISTER)(cr2id[m]);
+			result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+			result->operands[1].type = DEREF_REG;
+			result->operands[1].regA = (SH4_REGISTER)(R0 + cr2id[m]);
+			sprintf(result->string, "stc.l %s,@-r%d", cr2str[m], n);
 		}
 		else {
 			result->opcode = OPC_STC;
 			result->length_suffix = LEN_SUFFIX_L;
+			result->operands[0].type = BANKREG;
+			result->operands[0].regA = (SH4_REGISTER)(BANKREG + m);
+			result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+			result->operands[1].type = DEREF_REG;
+			result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 			sprintf(result->string, "stc.l r%d_bank,@-r%d", m, n);
 		}
 	}
@@ -1742,6 +2544,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = CTRLREG;
+		result->operands[0].regA = (SH4_REGISTER)(SGR);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc.l sgr,@-r%d", n);
 	}
 
@@ -1750,6 +2557,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = CTRLREG;
+		result->operands[0].regA = (SH4_REGISTER)(SPC);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc.l spc,@-r%d", n);
 	}
 
@@ -1758,6 +2570,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = CTRLREG;
+		result->operands[0].regA = (SH4_REGISTER)(SR);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc.l sr,@-r%d", n);
 	}
 
@@ -1766,6 +2583,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = CTRLREG;
+		result->operands[0].regA = (SH4_REGISTER)(SSR);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc.l ssr,@-r%d", n);
 	}
 
@@ -1774,6 +2596,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STC;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = CTRLREG;
+		result->operands[0].regA = (SH4_REGISTER)(VBR);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "stc.l vbr,@-r%d", n);
 	}
 
@@ -1781,6 +2608,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x6a) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STS;
+		result->operands[0].type = SYSREG;
+		result->operands[0].regA = (SH4_REGISTER)(FPSCR);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "sts fpscr,r%d", n);
 	}
 
@@ -1788,6 +2619,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x5a) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STS;
+		result->operands[0].type = SYSREG;
+		result->operands[0].regA = (SH4_REGISTER)(FPUL);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "sts fpul,r%d", n);
 	}
 
@@ -1795,6 +2630,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0xa) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STS;
+		result->operands[0].type = SYSREG;
+		result->operands[0].regA = (SH4_REGISTER)(MACH);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "sts mach,r%d", n);
 	}
 
@@ -1802,6 +2641,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x1a) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STS;
+		result->operands[0].type = SYSREG;
+		result->operands[0].regA = (SH4_REGISTER)(MACL);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "sts macl,r%d", n);
 	}
 
@@ -1809,6 +2652,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0x2a) {
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STS;
+		result->operands[0].type = SYSREG;
+		result->operands[0].regA = (SH4_REGISTER)(PR);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "sts pr,r%d", n);
 	}
 
@@ -1817,6 +2664,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STS;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = SYSREG;
+		result->operands[0].regA = (SH4_REGISTER)(FPSCR);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "sts.l fpscr,@-r%d", n);
 	}
 
@@ -1825,6 +2677,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STS;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = SYSREG;
+		result->operands[0].regA = (SH4_REGISTER)(FPUL);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "sts.l fpul,@-r%d", n);
 	}
 
@@ -1833,6 +2690,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STS;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = SYSREG;
+		result->operands[0].regA = (SH4_REGISTER)(MACH);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "sts.l mach,@-r%d", n);
 	}
 
@@ -1841,6 +2703,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STS;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = SYSREG;
+		result->operands[0].regA = (SH4_REGISTER)(MACL);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "sts.l macl,@-r%d", n);
 	}
 
@@ -1849,6 +2716,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_STS;
 		result->length_suffix = LEN_SUFFIX_L;
+		result->operands[0].type = SYSREG;
+		result->operands[0].regA = (SH4_REGISTER)(PR);
+		result->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
+		result->operands[1].type = DEREF_REG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "sts.l pr,@-r%d", n);
 	}
 
@@ -1857,6 +2729,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SUB;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "sub r%d,r%d", m, n);
 	}
 
@@ -1865,6 +2741,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SUBC;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "subc r%d,r%d", m, n);
 	}
 
@@ -1873,6 +2753,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SUBV;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "subv r%d,r%d", m, n);
 	}
 
@@ -1882,6 +2766,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SWAP;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "swap.b r%d,r%d", m, n);
 	}
 
@@ -1891,6 +2779,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_SWAP;
 		result->length_suffix = LEN_SUFFIX_W;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "swap.w r%d,r%d", m, n);
 	}
 
@@ -1899,6 +2791,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_TAS;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = DEREF_REG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "tas.b @r%d", n);
 	}
 
@@ -1906,6 +2800,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xff00) == 0xc300) {
 		int16_t i = int8(insword & 0xff);
 		result->opcode = OPC_TRAPA;
+		result->operands[0].type = IMMEDIATE;
+		result->operands[0].immediate = i;
 		sprintf(result->string, "trapa #%d", i);
 	}
 
@@ -1913,6 +2809,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xff00) == 0xc800) {
 		int16_t i = int8(insword & 0xff);
 		result->opcode = OPC_TST;
+		result->operands[0].type = IMMEDIATE;
+		result->operands[0].immediate = i;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
 		sprintf(result->string, "tst #%d,r0", i);
 	}
 
@@ -1921,6 +2821,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		int16_t m = (insword & 0xf0)>>4;
 		int16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_TST;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "tst r%d,r%d", m, n);
 	}
 
@@ -1929,6 +2833,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		int16_t i = int8(insword & 0xff);
 		result->opcode = OPC_TST;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = IMMEDIATE;
+		result->operands[0].immediate = i;
+		result->operands[1].type = DEREF_REG_REG;
+		result->operands[1].regA = (SH4_REGISTER)(GBR);
+		result->operands[1].regB = R0;
 		sprintf(result->string, "tst.b #%d,@(r0,gbr)", i);
 	}
 
@@ -1936,6 +2845,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xff00) == 0xca00) {
 		int16_t i = int8(insword & 0xff);
 		result->opcode = OPC_XOR;
+		result->operands[0].type = IMMEDIATE;
+		result->operands[0].immediate = i;
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0);
 		sprintf(result->string, "xor #%d,r0", i);
 	}
 
@@ -1944,6 +2857,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_XOR;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "xor r%d,r%d", m, n);
 	}
 
@@ -1952,6 +2869,11 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		int16_t i = int8(insword & 0xff);
 		result->opcode = OPC_XOR;
 		result->length_suffix = LEN_SUFFIX_B;
+		result->operands[0].type = IMMEDIATE;
+		result->operands[0].immediate = i;
+		result->operands[1].type = DEREF_REG_REG;
+		result->operands[1].regA = (SH4_REGISTER)(GBR);
+		result->operands[1].regB = R0;
 		sprintf(result->string, "xor.b #%d,@(r0,gbr)", i);
 	}
 
@@ -1960,6 +2882,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_XTRCT;
+		result->operands[0].type = GPREG;
+		result->operands[0].regA = (SH4_REGISTER)(R0 + m);
+		result->operands[1].type = GPREG;
+		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		sprintf(result->string, "xtrct r%d,r%d", m, n);
 	}
 
@@ -1967,6 +2893,8 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf0ff) == 0xf07d) {
 		uint16_t m = (insword & 0xf00)>>8;
 		result->opcode = OPC_FSRRA;
+		result->operands[0].type = FPUREG;
+		result->operands[0].regA = (SH4_REGISTER)(FR0 + m);
 		sprintf(result->string, "fsrra fr%d", m);
 	}
 
@@ -1974,6 +2902,10 @@ int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result)
 	else if((insword & 0xf1ff) == 0xf0fd) {
 		uint16_t m = (insword & 0xE00)>>9;
 		result->opcode = OPC_FSCA;
+		result->operands[0].type = SYSREG;
+		result->operands[0].regA = (SH4_REGISTER)(FPUL);
+		result->operands[1].type = FPUREG;
+		result->operands[1].regA = (SH4_REGISTER)(DR0 + 2*m);
 		sprintf(result->string, "fsca fpul,dr%d", 2*m);
 	}
 
