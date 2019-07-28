@@ -73,12 +73,14 @@ int get_disasm_libopcodes(uint32_t addr, uint8_t *data, int len, char *result)
 
 int main(int ac, char **av)
 {
+	struct disasm_result dr;
 	char resultA[128], resultB[128];
 	uint32_t addr = 0;
 
 	for(uint16_t insword=0; 1; insword++) {
 		/* result a is us */
-		int rc = disasm(addr, insword, resultA);
+		int rc = disasm(addr, insword, &dr);
+		strcpy(resultA, dr->string);
 		/* result b is them */
 		get_disasm_libopcodes(addr, (uint8_t *)&insword, 2, resultB);
 

@@ -5,9 +5,10 @@
 using namespace std;
 
 #include <binaryninjaapi.h>
-//#define printf(...) while(0);
-
 using namespace BinaryNinja; // for ::LogDebug, etc.
+
+//#define printf(...) while(0);
+#include "disasm.h"
 
 /*****************************************************************************/
 /* the architecture class */
@@ -75,7 +76,7 @@ class SH4Architecture: public Architecture
 	{
 		char tmp[32];
 
-		printf("%s(data, addr=%X, maxLen=%d, result) parses ", __func__, addr, maxLen);
+		printf("%s(data, addr=%llX, maxLen=%zu, result) parses ", __func__, addr, maxLen);
 		result.length = 1;
 		return true;
 	}
