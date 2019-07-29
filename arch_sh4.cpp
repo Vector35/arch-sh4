@@ -1,11 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <vector>
-using namespace std;
-
-#include <binaryninjaapi.h>
+#include "binaryninjaapi.h"
 using namespace BinaryNinja; // for ::LogDebug, etc.
+using namespace std;
 
 //#define printf(...) while(0);
 #include "disasm.h"
@@ -53,13 +51,11 @@ class SH4Architecture: public Architecture
 
 	virtual size_t GetDefaultIntegerSize() const override
 	{
-		printf("%s() returns 2\n", __func__);
 		return 4; // 4 bytes, 32-bits
 	}
 
 	virtual size_t GetInstructionAlignment() const override
 	{
-		printf("%s() returns 1\n", __func__);
 		return 2;
 	}
 
@@ -67,7 +63,6 @@ class SH4Architecture: public Architecture
 		(how much for binja to buffer before calling GetInstructionInfo()) */
 	virtual size_t GetMaxInstructionLength() const override
 	{
-		printf("%s() returns 4\n", __func__);
 		return 2;
 	}
 
@@ -76,18 +71,116 @@ class SH4Architecture: public Architecture
 	{
 		char tmp[32];
 
-		printf("%s(data, addr=%llX, maxLen=%zu, result) parses ", __func__, addr, maxLen);
+		//printf("%s(data, addr=%llX, maxLen=%zu, result) parses ", __func__, addr, maxLen);
 		result.length = 1;
 		return true;
 	}
 
-	virtual bool GetInstructionText(const uint8_t* data, uint64_t addr, 
+	virtual bool GetInstructionText(const uint8_t* data, uint64_t addr,
 	  size_t& len, vector<InstructionTextToken>& result) override
 	{
-		//printf("%s(data, 0x%llX, 0x%zX, il)\n", __func__, addr, len);
-		char output[64];
-		strcpy(output, "HELLO");
-		result.emplace_back(TextToken, output);
+		//printf("%s(%02X %02X, 0x%llX, 0x%zX, il)\n", __func__, data[0], data[1], addr, len);
+		char buf[32];
+
+		/* decompose instruction */
+		struct decomp_result dr;
+		memset(&dr, 0, sizeof(dr));
+		if(decompose(addr, *(uint16_t *)data, &dr) != 0)
+			return false;
+		if(!(dr.opcode > OPC_NONE && dr.opcode < OPC_MAXIMUM))
+			return false;
+
+		/* opcode */
+		strcpy(buf, sh4_opc_strs[dr.opcode]);
+		/* size modifier suffixes {.b, .w, .l} */
+		if(dr.length_suffix == LEN_SUFFIX_B)
+			strcat(buf, ".b");
+		if(dr.length_suffix == LEN_SUFFIX_W)
+			strcat(buf, ".w");
+		if(dr.length_suffix == LEN_SUFFIX_L)
+			strcat(buf, ".l");
+		/* delay slot suffix .s or /s from doc */
+		if(dr.delay_slot)
+			strcat(buf, ".s");
+		/* conditional "/xxx" if this is a cmp */
+		if(dr.opcode == OPC_CMP || dr.opcode == OPC_FCMP) {
+			if(dr.cond > CMP_COND_NONE && dr.cond < CMP_COND_MAXIMUM) {
+				strcat(buf, "/");
+				strcat(buf, sh4_cmp_cond_strs[dr.cond]);
+			}
+		}
+		/* done */
+		result.emplace_back(InstructionToken, buf);
+
+		/* operands */
+		if(dr.operands_n)
+			result.emplace_back(TextToken, " ");
+
+		for(int i=0; i < (dr.operands_n); ++i) {
+			char buf[32];
+
+			switch(dr.operands[i].type) {
+				case GPREG:
+				case BANKREG:
+				case CTRLREG:
+				case SYSREG:
+				case FPUREG:
+					result.emplace_back(RegisterToken, sh4_reg_strs[dr.operands[i].regA]);
+					break;
+
+				case IMMEDIATE:
+					result.emplace_back(TextToken, "#");
+					sprintf(buf, "%d", dr.operands[i].immediate);
+					result.emplace_back(IntegerToken, buf);
+					break;
+
+				case ADDRESS:
+					sprintf(buf, "0x%016llx", dr.operands[i].address);
+					result.emplace_back(IntegerToken, buf);
+					break;
+
+				case DEREF_REG:
+					result.emplace_back(BeginMemoryOperandToken, "@");
+
+					if(dr.operands[i].flags & SH4_FLAG_PRE_INCREMENT)
+						result.emplace_back(TextToken, "+");
+					if(dr.operands[i].flags & SH4_FLAG_PRE_DECREMENT)
+						result.emplace_back(TextToken, "-");
+
+					result.emplace_back(RegisterToken, sh4_reg_strs[dr.operands[i].regA]);
+
+					if(dr.operands[i].flags & SH4_FLAG_POST_INCREMENT)
+						result.emplace_back(TextToken, "+");
+					if(dr.operands[i].flags & SH4_FLAG_POST_DECREMENT)
+						result.emplace_back(TextToken, "-");
+					break;
+
+				case DEREF_REG_REG:
+					result.emplace_back(BeginMemoryOperandToken, "@(");
+					result.emplace_back(RegisterToken, sh4_reg_strs[dr.operands[i].regA]);
+					result.emplace_back(OperandSeparatorToken, ",");
+					result.emplace_back(RegisterToken, sh4_reg_strs[dr.operands[i].regB]);
+					result.emplace_back(EndMemoryOperandToken, ")");
+					break;
+
+				case DEREF_REG_IMM:
+					result.emplace_back(BeginMemoryOperandToken, "@(");
+					sprintf(buf, "%d", dr.operands[i].displacement);
+					result.emplace_back(IntegerToken, buf);
+					result.emplace_back(OperandSeparatorToken, ",");
+					result.emplace_back(RegisterToken, sh4_reg_strs[dr.operands[i].regA]);
+					result.emplace_back(EndMemoryOperandToken, ")");
+					break;
+
+				default:
+					LogError("unknown operand type\n");
+					break;
+			}
+
+			if(i != dr.operands_n-1)
+				result.emplace_back(OperandSeparatorToken, ",");
+		}
+
 		return true;
 	}
 
@@ -112,7 +205,7 @@ class SH4Architecture: public Architecture
 
 	virtual vector<uint32_t> GetAllFlags() override
 	{
-		printf("%s()\n", __func__);
+		//printf("%s()\n", __func__);
 		return vector<uint32_t>();
 	}
 
@@ -148,7 +241,7 @@ class SH4Architecture: public Architecture
 
 	virtual vector<uint32_t> GetFlagsRequiredForFlagCondition(BNLowLevelILFlagCondition cond, uint32_t semClass = 0) override
 	{
-		printf("%s(%d)\n", __func__, cond);
+		//printf("%s(%d)\n", __func__, cond);
 		return vector<uint32_t>();
 	}
 
@@ -166,7 +259,7 @@ class SH4Architecture: public Architecture
 
 	virtual BNRegisterInfo GetRegisterInfo(uint32_t regId) override
 	{
-		printf("%s()\n", __func__);
+		//printf("%s()\n", __func__);
 		return RegisterInfo(0,0,0);
 	}
 

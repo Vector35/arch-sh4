@@ -9,8 +9,8 @@ PATH_PLUGINS = $(HOME)/Library/Application Support/Binary Ninja/plugins
 
 all: arch_sh4.dylib
 
-arch_sh4.dylib: arch_sh4.cpp
-	g++ -std=gnu++11 -I$(PATH_API) arch_sh4.cpp $(PATH_API)/libbinaryninjaapi.a $(PATH_BINJA_APP)/libbinaryninjacore.dylib -fPIC -shared -o arch_sh4.dylib
+arch_sh4.dylib: arch_sh4.cpp disasm.cpp disasm.h
+	g++ -std=gnu++11 -I$(PATH_API) arch_sh4.cpp disasm.cpp $(PATH_API)/libbinaryninjaapi.a $(PATH_BINJA_APP)/libbinaryninjacore.dylib -fPIC -shared -o arch_sh4.dylib
 
 disasm_test: disasm_test.cpp disasm.cpp disasm.h
 	g++ -I/usr/local/include -std=c++11 -O0 -g \

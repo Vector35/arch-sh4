@@ -3,6 +3,7 @@
 /* */
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 /* our stuff */
 #include "disasm.h"
@@ -74,10 +75,18 @@ int get_disasm_libopcodes(uint32_t addr, uint8_t *data, int len, char *result)
 int main(int ac, char **av)
 {
 	char resultA[128], resultB[128];
-	uint32_t addr = 0;
+	uint64_t addr = 0;
+	//uint64_t addr = 0xFFFFFFFC;
 	int maxlen = 0;
 
-	for(uint16_t insword=0; 1; insword++) {
+	uint16_t start=0, end=0xFFFF;
+
+	if(ac > 1) {
+		start = strtoul(av[1], NULL, 16);
+		end = strtoul(av[1], NULL, 16);
+	}	
+
+	for(uint16_t insword=start; 1; insword++) {
 		/* result a is us */
 		int rc = disassemble(addr, insword, resultA);
 		/* result b is them */
@@ -94,7 +103,7 @@ int main(int ac, char **av)
 			resultB[l-1] = '\x0';
 
 		/* print */
-		printf("%04X    [%s]    vs.    [%s]\n", insword, resultA, resultB);
+		printf("%016llx: %04X [%s] vs. [%s]\n", addr, insword, resultA, resultB);
 
 		/* compare */
 		bool match = false;
@@ -112,7 +121,7 @@ int main(int ac, char **av)
 			break;
 		}
 
-		if(insword == 0xFFFF) break;
+		if(insword == end) break;
 	}
 
 	printf("maximum length string is: %d\n", maxlen);

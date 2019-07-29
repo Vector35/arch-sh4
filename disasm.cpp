@@ -77,16 +77,10 @@ static int int12(uint16_t i)
 }
 
 // displacement to effective address
-static uint64_t displ2ea(unsigned int scale, int disp, uint32_t base)
+static uint64_t displ2ea(unsigned int scale, int disp, int64_t base)
 {
-	int dest = (base+4) + scale*disp;
-
-	if(dest < 0) {
-		dest = -dest;
-		dest = dest ^ 0xFFFFFFFFFFFFFFFF;
-		dest = dest + 1;
-	}
-
+	//printf("%s(%d, %d, 0x%016llx)\n", __func__, scale, disp, base);
+	int32_t dest = (base+4) + scale*disp;
 	return dest;
 }
 
@@ -3297,7 +3291,7 @@ int disassemble(uint32_t addr, uint16_t insword, char *result)
 				break;
 			case DEREF_REG_IMM:
 				sprintf(buf, "@(%d,%s)", dr.operands[i].displacement, sh4_reg_strs[dr.operands[i].regA]);
-				strcat(result, buf);			
+				strcat(result, buf);
 				break;
 			default:
 				printf("MAJOR ERROR\n");
