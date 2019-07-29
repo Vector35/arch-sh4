@@ -66,13 +66,57 @@ class SH4Architecture: public Architecture
 		return 2;
 	}
 
+	/* think "GetInstructionBranchBehavior()"
+
+	   populates struct Instruction Info (api/binaryninjaapi.h)
+	   which extends struct BNInstructionInfo (core/binaryninjacore.h)
+
+	   tasks:
+		1) set the length
+		2) invoke AddBranch() for every non-sequential execution possibility
+
+	   */
 	virtual bool GetInstructionInfo(const uint8_t* data, uint64_t addr,
 		size_t maxLen, InstructionInfo& result) override
 	{
 		char tmp[32];
+		struct decomp_result dr;
+
+		memset(&dr, 0, sizeof(dr));
+		if(decompose(addr, *(uint16_t *)data, &dr) != 0)
+			return false;
+
+		switch(dr.opcode) {
+			case OPC_BSR:
+			case OPC_BSRF:
+			case OPC_JSR:
+				if(dr.operands_n == 1)
+					result.AddBranch(CallDestination, dr.operands[0].address);
+				else
+					result.AddBranch(UnresolvedBranch);
+				break;
+
+			case OPC_BRA:
+			case OPC_JMP:
+				if(dr.operands_n == 1)
+					result.AddBranch(UnconditionalBranch, dr.operands[0].address);
+				else
+					result.AddBranch(UnresolvedBranch);
+				break;
+
+			case OPC_BT:
+			case OPC_BF:
+				//result.AddBranch(TrueBranch, dr.operands[0].address);
+				//result.AddBranch(FalseBranch, addr+2);
+				break;
+
+			case OPC_RTS:
+				result.AddBranch(FunctionReturn);
+				break;
+		}
 
 		//printf("%s(data, addr=%llX, maxLen=%zu, result) parses ", __func__, addr, maxLen);
-		result.length = 1;
+		result.length = 2;
 		return true;
 	}
 
@@ -186,7 +230,7 @@ class SH4Architecture: public Architecture
 
 	virtual bool GetInstructionLowLevelIL(const uint8_t* data, uint64_t addr, size_t& len, LowLevelILFunction& il) override
 	{
-		printf("%s()\n", __func__);
+		//printf("%s()\n", __func__);
 		return false;
 	}
 
@@ -199,7 +243,10 @@ class SH4Architecture: public Architecture
 
 	virtual string GetRegisterName(uint32_t regId) override
 	{
-		printf("%s()\n", __func__);
+		//printf("%s()\n", __func__);
+		if(regId > SH4_REGISTER_NONE && regId < SH4_REGISTER_MAXIMUM)
+			return sh4_reg_strs[regId];
+
 		return "unknown";
 	}
 
@@ -254,6 +301,8 @@ class SH4Architecture: public Architecture
 	virtual vector<uint32_t> GetAllRegisters() override
 	{
 		vector<uint32_t> result = {0};
+		for(int i=1; i<(int)SH4_REGISTER_MAXIMUM; i++)
+			result.push_back(i);
 		return result;
 	}
 
@@ -265,14 +314,12 @@ class SH4Architecture: public Architecture
 
 	virtual uint32_t GetStackPointerRegister() override
 	{
-		printf("%s()\n", __func__);
-		return 0;
+		return R15;
 	}
 
 	virtual uint32_t GetLinkRegister() override
 	{
-		printf("%s()\n", __func__);
-		return 0;
+		return PR;
 	}
 
 	/*************************************************************************/
