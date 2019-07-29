@@ -12,12 +12,12 @@ all: arch_sh4.dylib
 arch_sh4.dylib: arch_sh4.cpp
 	g++ -std=gnu++11 -I$(PATH_API) arch_sh4.cpp $(PATH_API)/libbinaryninjaapi.a $(PATH_BINJA_APP)/libbinaryninjacore.dylib -fPIC -shared -o arch_sh4.dylib
 
-disasm_test: disasm_test.cpp disasm.cpp
+disasm_test: disasm_test.cpp disasm.cpp disasm.h
 	g++ -I/usr/local/include -std=c++11 -O0 -g \
 		-lbfd -liberty -lopcodes -lz disasm_test.cpp disasm.cpp -o disasm_test
 
 clean:
-	rm -f arch_sh4.dylib
+	rm -f arch_sh4.dylib disasm_test
 
 install:
 	cp arch_sh4.dylib "$(PATH_PLUGINS)"

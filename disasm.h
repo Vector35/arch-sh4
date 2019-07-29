@@ -13,10 +13,16 @@ enum SH4_OPC {
 	OPC_SETS, OPC_SETT, OPC_SHAD, OPC_SHAL, OPC_SHAR, OPC_SHLD, OPC_SHLL,
 	OPC_SHLL16, OPC_SHLL2, OPC_SHLL8, OPC_SHLR, OPC_SHLR16, OPC_SHLR2, OPC_SHLR8,
 	OPC_SLEEP, OPC_STC, OPC_STS, OPC_SUB, OPC_SUBC, OPC_SUBV, OPC_SWAP, OPC_TAS,
-	OPC_TRAPA, OPC_TST, OPC_XOR, OPC_XTRCT
+	OPC_TRAPA, OPC_TST, OPC_XOR, OPC_XTRCT,
+
+	OPC_MAXIMUM
 };
 
+extern const char *sh4_opc_strs[];
+
 enum SH4_REGISTER {
+	SH4_REGISTER_NONE=0,
+
 	/* gpr's */
 	R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15,
 	/* banks */
@@ -30,11 +36,15 @@ enum SH4_REGISTER {
 	FR0, FR1, FR2, FR3, FR4, FR5, FR6, FR7, FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15,
 	XR0, XR1, XR2, XR3, XR4, XR5, XR6, XR7, XR8, XR9, XR10, XR11, XR12, XR13, XR14, XR15,
 	DR0, DR1, DR2, DR3, DR4, DR5, DR6, DR7, DR8, DR9, DR10, DR11, DR12, DR13, DR14, DR15,
-	FV0, FV1, FV2, FV3,
+	FV0, FV1, FV2, FV3, FV4, FV5, FV6, FV7, FV8, FV9, FV10, FV11, FV12, FV13, FV14, FV15,
 	/* wtf */
 	XD0, XD1, XD2, XD3,
-	XMTRX
+	XMTRX,
+
+	SH4_REGISTER_MAXIMUM
 };
+
+extern const char *sh4_reg_strs[];
 
 enum SH4_LEN_SUFFIX { LEN_SUFFIX_NONE=0, LEN_SUFFIX_B, LEN_SUFFIX_W, LEN_SUFFIX_L };
 
@@ -58,20 +68,32 @@ struct disasm_operand
 	enum SH4_REGISTER regB;
 	int flags;
 	int displacement;
-	uint16_t immediate;
+	int16_t immediate;
 	uint64_t address;
 };
 
-struct disasm_result
+extern const char *sh4_cmp_cond_strs[];
+
+enum SH4_CMP_COND {
+	CMP_COND_NONE=0,
+	CMP_COND_EQ, CMP_COND_GE, CMP_COND_GT, CMP_COND_HI, CMP_COND_HS, CMP_COND_PL, CMP_COND_PZ, CMP_COND_STR,
+
+	CMP_COND_MAXIMUM
+};
+
+struct decomp_result
 {
 	enum SH4_OPC opcode;
 	enum SH4_LEN_SUFFIX length_suffix;
 	bool delay_slot;
+	enum SH4_CMP_COND cond;
 	/* operands */
+	int operands_n;
 	struct disasm_operand operands[3];
 
 	/* string production */
 	char string[32];
 };
 
-int disasm(uint32_t addr, uint16_t insword, struct disasm_result *result);
+int decompose(uint32_t addr, uint16_t insword, struct decomp_result *result);
+int disassemble(uint32_t addr, uint16_t insword, char *result);
