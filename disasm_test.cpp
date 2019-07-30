@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 /* our stuff */
 #include "disasm.h"
@@ -13,6 +14,7 @@
 #define PACKAGE_VERSION "2.30"
 #include <bfd.h> // for bfd_arch_arm, etc.
 #include <dis-asm.h>
+
 
 int cb_fprintf(void *stream, const char *fmt, ...)
 {
@@ -80,6 +82,27 @@ int main(int ac, char **av)
 	int maxlen = 0;
 
 	uint16_t start=0, end=0xFFFF;
+
+	if(ac > 1 && !strcmp(av[1], "speed")) {
+		double delta;
+		struct timespec t0,t1;
+		uint16_t insword = 0;
+		struct decomp_result dr;
+
+		clock_gettime(CLOCK_MONOTONIC, &t0);
+		#define NUM_TRIALS (10*1000*1000)
+		for(int i=0; i<NUM_TRIALS; i++) {
+			decompose(0, insword, &dr);
+		}
+		clock_gettime(CLOCK_MONOTONIC, &t1);
+
+		delta = (double)(t1.tv_nsec - t0.tv_nsec) / 1000000000.0;
+		delta += (double)t1.tv_sec - t0.tv_sec;
+		printf("computed %d decompositions in %f wallclock seconds\n", NUM_TRIALS, delta);
+		printf("that's %f trials/second\n", NUM_TRIALS/delta);
+
+		return 0;
+	}
 
 	if(ac > 1) {
 		start = strtoul(av[1], NULL, 16);

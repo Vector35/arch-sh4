@@ -1,4 +1,11 @@
-/* no binja includes! keep separate to ease compile/link into tester */
+/* no binja includes! keep separate to ease compile/link into tester
+
+	the if/else chain look inefficient, but optimizer takes care of it
+
+	21,000,000 decodes/second with -O2
+     4,000,000 decodes/second with -O0
+
+*/
 
 #include <stdio.h>
 #include <stdint.h>
