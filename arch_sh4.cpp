@@ -113,6 +113,9 @@ class SH4Architecture: public Architecture
 			case OPC_RTS:
 				result.AddBranch(FunctionReturn);
 				break;
+
+			default:
+				break;
 		}
 
 		//printf("%s(data, addr=%llX, maxLen=%zu, result) parses ", __func__, addr, maxLen);
@@ -231,7 +234,66 @@ class SH4Architecture: public Architecture
 	virtual bool GetInstructionLowLevelIL(const uint8_t* data, uint64_t addr, size_t& len, LowLevelILFunction& il) override
 	{
 		//printf("%s()\n", __func__);
-		return false;
+
+		/* decompose instruction, any errors? return false */
+		struct decomp_result dr;
+		memset(&dr, 0, sizeof(dr));
+		if(decompose(addr, *(uint16_t *)data, &dr) != 0)
+			return false;
+		if(!(dr.opcode > OPC_NONE && dr.opcode < OPC_MAXIMUM))
+			return false;
+
+		switch(dr.opcode) {
+			/* there are 3 "call subroutine" instrucitons in SH4 */
+			/* (1/3) JumpSubRoutine <reg> */
+			case OPC_JSR:
+				il.AddInstruction(il.Call(il.Register(4, dr.operands[0].regA)));
+				break;
+
+			/* (2/3) branch subroutine, PC = (PC+4) + 2*disp */
+			case OPC_BSR:
+				il.AddInstruction(il.Call(il.ConstPointer(4, dr.operands[0].address)));
+				break;
+
+			/* (3/3) branch subroutine far, PC = (PC+4) + Rn */
+			case OPC_BSRF:
+				il.AddInstruction(il.Call(
+					il.Add(4,
+						il.Add(4, il.Register(4, PC), il.Const(4, 4)),
+						il.Register(4, dr.operands[0].regA)
+					)
+				));
+				break;
+
+			case OPC_JMP:
+				il.AddInstruction(il.Jump(il.Register(4, dr.operands[0].regA)));
+				break;
+
+			case OPC_MOV:
+				if(dr.operands_n == 2 && dr.operands[0].type == IMMEDIATE && dr.operands[1].type == GPREG)
+					il.AddInstruction(il.SetRegister(4,
+						dr.operands[1].regA,
+						il.Const(4, dr.operands[0].immediate)
+					));
+				else
+				if(dr.operands_n == 2 && dr.operands[0].type == ADDRESS && dr.operands[1].type == GPREG)
+					il.AddInstruction(il.SetRegister(4,
+						dr.operands[1].regA,
+						il.ConstPointer(4, dr.operands[0].address)
+					));		
+				else
+					il.AddInstruction(il.Nop());
+
+			/* return subroutine */
+			case OPC_RTS:
+				il.AddInstruction(il.Return(il.Register(4, PR))); 
+
+			default:
+				il.AddInstruction(il.Nop());
+		}
+
+		len = 2;
+		return true;
 	}
 
 	virtual size_t GetFlagWriteLowLevelIL(BNLowLevelILOperation op, size_t size, uint32_t flagWriteType,
