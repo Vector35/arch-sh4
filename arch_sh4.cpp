@@ -183,7 +183,7 @@ class SH4Architecture: public Architecture
 
 				case ADDRESS:
 					sprintf(buf, "0x%016llx", dr.operands[i].address);
-					result.emplace_back(IntegerToken, buf);
+					result.emplace_back(PossibleAddressToken, buf);
 					break;
 
 				case DEREF_REG:
@@ -246,6 +246,7 @@ class SH4Architecture: public Architecture
 		switch(dr.opcode) {
 			/* there are 3 "call subroutine" instrucitons in SH4 */
 			/* (1/3) JumpSubRoutine <reg> */
+			/* eg: 0B 41    jsr @r1 */
 			case OPC_JSR:
 				il.AddInstruction(il.Call(il.Register(4, dr.operands[0].regA)));
 				break;
@@ -270,12 +271,14 @@ class SH4Architecture: public Architecture
 				break;
 
 			case OPC_MOV:
+				/* eg: 00 EE    mov #0, r14 */
 				if(dr.operands_n == 2 && dr.operands[0].type == IMMEDIATE && dr.operands[1].type == GPREG)
 					il.AddInstruction(il.SetRegister(4,
 						dr.operands[1].regA,
 						il.Const(4, dr.operands[0].immediate)
 					));
 				else
+				/* eg: 04 D4    mov.l 0x004021f2, r4 */
 				if(dr.operands_n == 2 && dr.operands[0].type == ADDRESS && dr.operands[1].type == GPREG)
 					il.AddInstruction(il.SetRegister(4,
 						dr.operands[1].regA,
@@ -284,9 +287,12 @@ class SH4Architecture: public Architecture
 				else
 					il.AddInstruction(il.Nop());
 
+				break;
+
 			/* return subroutine */
 			case OPC_RTS:
 				il.AddInstruction(il.Return(il.Register(4, PR))); 
+				break;
 
 			default:
 				il.AddInstruction(il.Nop());
@@ -351,13 +357,16 @@ class SH4Architecture: public Architecture
 	virtual vector<uint32_t> GetFlagsRequiredForFlagCondition(BNLowLevelILFlagCondition cond, uint32_t semClass = 0) override
 	{
 		//printf("%s(%d)\n", __func__, cond);
-		return vector<uint32_t>();
+		return vector<uint32_t>{};
 	}
 
 	virtual vector<uint32_t> GetFullWidthRegisters() override
 	{
 		printf("%s()\n", __func__);
-		return vector<uint32_t>{0};
+		return vector<uint32_t> {
+			R0, R1, R2, R3, R4, R5, R6, R7,
+			R8, R9, R10, R11, R12, R13, R14, R15
+		};
 	}
 
 	virtual vector<uint32_t> GetAllRegisters() override
