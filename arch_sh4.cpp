@@ -485,18 +485,84 @@ class SH4Architecture: public Architecture
 
 };
 
+class Sh4LinuxCallingConvention: public CallingConvention
+{
+public:
+	Sh4LinuxCallingConvention(Architecture* arch): CallingConvention(arch, "sh4-standard")
+	{
+	}
+
+	virtual vector<uint32_t> GetIntegerArgumentRegisters() override
+	{
+		return vector<uint32_t>{
+			R4, R6, R6, R7
+		};
+	}
+
+	virtual vector<uint32_t> GetCallerSavedRegisters() override
+	{
+		return vector<uint32_t>{
+		};
+	}
+
+	virtual vector<uint32_t> GetCalleeSavedRegisters() override
+	{
+		return vector<uint32_t>{
+		};
+	}
+
+	virtual uint32_t GetIntegerReturnValueRegister() override
+	{
+		return R0;
+	}
+};
+
+
+class LinuxSH4Platform: public Platform
+{
+public:
+	LinuxSH4Platform(Architecture* arch): Platform(arch, "linux-sh4")
+	{
+		Ref<CallingConvention> cc;
+
+		cc = arch->GetCallingConventionByName("sh4-standard");
+		if(cc)
+			RegisterDefaultCallingConvention(cc);
+
+		cc = arch->GetCallingConventionByName("linux-syscall");
+		if(cc)
+			SetSystemCallConvention(cc);
+	}
+};
+
 extern "C"
 {
 	BINARYNINJAPLUGIN bool CorePluginInit()
 	{
+		#define EM_SUPERH 0x2a
+
 		printf("ARCH SH4 compiled at %s %s\n", __DATE__, __TIME__);
 		LogInfo("ARCH SH4 compiled at %s %s\n", __DATE__, __TIME__);
 
-		/* create, register arch in global list of available architectures */
+		/* 1) architecture */
 		Architecture* archSh4 = new SH4Architecture("sh4", LittleEndian);
 		Architecture::Register(archSh4);
 
-		#define EM_SUPERH 0x2a
+		/* 2) calling conventions */
+		Ref<CallingConvention> conv;
+		conv = new Sh4LinuxCallingConvention(archSh4);
+		
+		archSh4->RegisterCallingConvention(conv);
+		archSh4->SetDefaultCallingConvention(conv);
+
+		/* 3) platform */
+		Ref<Platform> platform;
+		platform = new LinuxSH4Platform(archSh4);
+		Platform::Register("linux", platform);
+		BinaryViewType::RegisterPlatform("ELF", 0, archSh4, platform);
+		BinaryViewType::RegisterPlatform("ELF", EM_SUPERH, archSh4, platform);
+
+		/* 4) binary view */
 		BinaryViewType::RegisterArchitecture("ELF", EM_SUPERH, LittleEndian, archSh4);
 
 		return true;
