@@ -95,5 +95,5 @@ struct decomp_result
 	char string[32];
 };
 
-int decompose(uint32_t addr, uint16_t insword, struct decomp_result *result);
-int disassemble(uint32_t addr, uint16_t insword, char *result);
+int decompose(uint64_t addr, uint16_t insword, struct decomp_result *result);
+int disassemble(uint64_t addr, uint16_t insword, char *result);

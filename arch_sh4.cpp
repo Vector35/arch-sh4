@@ -282,8 +282,8 @@ class SH4Architecture: public Architecture
 				if(dr.operands_n == 2 && dr.operands[0].type == ADDRESS && dr.operands[1].type == GPREG)
 					il.AddInstruction(il.SetRegister(4,
 						dr.operands[1].regA,
-						il.ConstPointer(4, dr.operands[0].address)
-					));		
+						il.Load(4, il.ConstPointer(4, dr.operands[0].address))
+					));
 				else
 					il.AddInstruction(il.Nop());
 
@@ -291,7 +291,7 @@ class SH4Architecture: public Architecture
 
 			/* return subroutine */
 			case OPC_RTS:
-				il.AddInstruction(il.Return(il.Register(4, PR))); 
+				il.AddInstruction(il.Return(il.Register(4, PR)));
 				break;
 
 			default:
@@ -560,7 +560,7 @@ extern "C"
 		/* 2) calling conventions */
 		Ref<CallingConvention> conv;
 		conv = new Sh4LinuxCallingConvention(archSh4);
-		
+
 		archSh4->RegisterCallingConvention(conv);
 		archSh4->SetDefaultCallingConvention(conv);
 

@@ -7,7 +7,7 @@ PATH_API = $(HOME)/repos/vector35/binaryninja/api
 # point this to your plugin path
 PATH_PLUGINS = $(HOME)/Library/Application Support/Binary Ninja/plugins
 
-all: arch_sh4.dylib
+all: arch_sh4.dylib disasm_test
 
 arch_sh4.dylib: arch_sh4.cpp disasm.cpp disasm.h
 	g++ -std=gnu++11 -I$(PATH_API) arch_sh4.cpp disasm.cpp $(PATH_API)/libbinaryninjaapi.a $(PATH_BINJA_APP)/libbinaryninjacore.dylib -fPIC -shared -o arch_sh4.dylib

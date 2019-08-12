@@ -84,14 +84,14 @@ static int int12(uint16_t i)
 }
 
 // displacement to effective address
-static uint64_t displ2ea(unsigned int scale, int disp, int64_t base)
+static uint64_t displ2ea(int scale, int disp, int64_t base)
 {
 	//printf("%s(%d, %d, 0x%016llx)\n", __func__, scale, disp, base);
-	int32_t dest = (base+4) + scale*disp;
+	int64_t dest = (base+4) + (scale*disp);
 	return dest;
 }
 
-int decompose(uint32_t addr, uint16_t insword, struct decomp_result *result)
+int decompose(uint64_t addr, uint16_t insword, struct decomp_result *result)
 {
 	int rc = 0;
 	char buff[128];
@@ -1916,12 +1916,13 @@ int decompose(uint32_t addr, uint16_t insword, struct decomp_result *result)
 
 	// 1101nnnndddddddd "mov.l @(disp,PC),Rn"
 	else if((insword & 0xf000) == 0xd000) {
-		uint64_t d = displ2ea(4,insword & 0xff,addr);
 		uint16_t n = (insword & 0xf00)>>8;
+		uint8_t disp = insword & 0xFF;
+		uint64_t eaddr = (addr & 0xFFFFFFFFC) + 4 + 4*disp;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_L;
 		result->operands[0].type = ADDRESS;
-		result->operands[0].address = d;
+		result->operands[0].address = eaddr;
 		result->operands[1].type = GPREG;
 		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		result->operands_n = 2;
@@ -2076,14 +2077,15 @@ int decompose(uint32_t addr, uint16_t insword, struct decomp_result *result)
 		//sprintf(result->string, "mov.w @(%d,gbr),r0", 2*d);
 	}
 
-	// 1001nnnndddddddd "mov.w @(disp,PC),Rn"
+	// 1001nnnndddddddd "mov.w dddddddd,Rn"
 	else if((insword & 0xf000) == 0x9000) {
-		uint16_t d = (addr+4) + 2*(insword & 0xff);
+		int16_t disp = insword & 0xff;
+		int64_t eaddr = (addr+4) + 2*disp;
 		uint16_t n = (insword & 0xf00)>>8;
 		result->opcode = OPC_MOV;
 		result->length_suffix = LEN_SUFFIX_W;
 		result->operands[0].type = ADDRESS;
-		result->operands[0].address = d;
+		result->operands[0].address = eaddr;
 		result->operands[1].type = GPREG;
 		result->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		result->operands_n = 2;
@@ -2209,10 +2211,11 @@ int decompose(uint32_t addr, uint16_t insword, struct decomp_result *result)
 
 	// 11000111dddddddd "mova @(disp,PC),r0"
 	else if((insword & 0xff00) == 0xc700) {
-		uint64_t d = displ2ea(4, insword & 0xff, addr);
+		uint8_t disp = insword & 0xFF;
+		uint64_t eaddr = (addr & 0xFFFFFFFFC) + 4 + 4*disp;
 		result->opcode = OPC_MOVA;
 		result->operands[0].type = ADDRESS;
-		result->operands[0].address = d;
+		result->operands[0].address = eaddr;
 		result->operands[1].type = GPREG;
 		result->operands[1].regA = R0;
 		result->operands_n = 2;
@@ -3228,7 +3231,7 @@ int decompose(uint32_t addr, uint16_t insword, struct decomp_result *result)
 	return rc;
 }
 
-int disassemble(uint32_t addr, uint16_t insword, char *result)
+int disassemble(uint64_t addr, uint16_t insword, char *result)
 {
 	/* default answer */
 	result[0] = '\0';

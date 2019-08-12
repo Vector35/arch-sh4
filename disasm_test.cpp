@@ -77,7 +77,8 @@ int get_disasm_libopcodes(uint32_t addr, uint8_t *data, int len, char *result)
 int main(int ac, char **av)
 {
 	char resultA[128], resultB[128];
-	uint64_t addr = 0;
+	uint64_t addr = 0x00400462;
+	//uint64_t addr = 0;
 	//uint64_t addr = 0xFFFFFFFC;
 	int maxlen = 0;
 
@@ -107,44 +108,49 @@ int main(int ac, char **av)
 	if(ac > 1) {
 		start = strtoul(av[1], NULL, 16);
 		end = strtoul(av[1], NULL, 16);
-	}	
+	}
 
-	for(uint16_t insword=start; 1; insword++) {
-		/* result a is us */
-		int rc = disassemble(addr, insword, resultA);
-		/* result b is them */
-		get_disasm_libopcodes(addr, (uint8_t *)&insword, 2, resultB);
+	uint64_t addrs[4] = {0xFFFFFFFC, 0x400462, 0x1234, 0x8000};
+	for(int i=0; i<4; ++i) {
+		addr = addrs[i];
+		for(uint16_t insword=start; 1; insword++) {
+			/* result a is us */
+			int rc = disassemble(addr, insword, resultA);
+			/* result b is them */
+			get_disasm_libopcodes(addr, (uint8_t *)&insword, 2, resultB);
 
-		/* normalize */
-		/* libopcodes: tabs to spaces */
-		int l = strlen(resultB);
-		for(int i=0; i<l; ++i)
-			if(resultB[i]=='\t')
-				resultB[i] = ' ';
-		/* libopcodes: remove trailing space */
-		if(resultB[l-1]==' ')
-			resultB[l-1] = '\x0';
+			/* normalize */
+			/* libopcodes: tabs to spaces */
+			int l = strlen(resultB);
+			for(int i=0; i<l; ++i)
+				if(resultB[i]=='\t')
+					resultB[i] = ' ';
+			/* libopcodes: remove trailing space */
+			if(resultB[l-1]==' ')
+				resultB[l-1] = '\x0';
 
-		/* print */
-		printf("%016llx: %04X [%s] vs. [%s]\n", addr, insword, resultA, resultB);
+			/* print */
+			printf("%016llx: %04X [%s] vs. [%s]\n", addr, insword, resultA, resultB);
 
-		/* compare */
-		bool match = false;
-		if(rc == -1 && strncmp(resultB, ".word", 5) == 0)
-			match = true;
-		if(strcmp(resultA, resultB) == 0) {
-			int tmp = strlen(resultA);
-			if(tmp > maxlen) maxlen = tmp;
-			match = true;
+			/* compare */
+			bool match = false;
+			if(rc == -1 && strncmp(resultB, ".word", 5) == 0)
+				match = true;
+			if(strcmp(resultA, resultB) == 0) {
+				int tmp = strlen(resultA);
+				if(tmp > maxlen) maxlen = tmp;
+				match = true;
+			}
+
+			/* bail */
+			if(!match) {
+				printf("MISMATCH!\n");
+				exit(-1);
+				break;
+			}
+
+			if(insword == end) break;
 		}
-
-		/* bail */
-		if(!match) {
-			printf("MISMATCH!\n");
-			break;
-		}
-
-		if(insword == end) break;
 	}
 
 	printf("maximum length string is: %d\n", maxlen);
