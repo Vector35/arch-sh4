@@ -40,15 +40,17 @@ int main(int ac, char **av)
 
 	if(ac <= 1) {
 		printf("example usage:\n");
-		printf("\t%s d503201f\n", av[0]);
+		printf("\t%s 1234\n", av[0]);
 		return -1;
 	}
 
 	if(!strcmp(av[1], "speed")) {
+		verbose = 0; // no prints, speed test
 		srand(0xCAFE);
 		for(int i=0; i<10000000; i++) {
 			uint16_t insword = (rand() << 16) ^ rand();
 			disassemble(0, insword, instxt);
+			// no prints, speed test
 			//printf("%08X: %s\n", 0, instxt);
 		}
 		return 0;
