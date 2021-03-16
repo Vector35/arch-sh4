@@ -6,7 +6,8 @@ using namespace BinaryNinja; // for ::LogDebug, etc.
 using namespace std;
 
 //#define printf(...) while(0);
-#include "disasm.h"
+#include "decode.h"
+#include "format.h"
 
 /*****************************************************************************/
 /* the architecture class */
@@ -68,7 +69,7 @@ class SH4Architecture: public Architecture
 
 	/* think "GetInstructionBranchBehavior()"
 
-	   populates struct Instruction Info (api/binaryninjaapi.h)
+	   populates InstructionInfo (api/binaryninjaapi.h)
 	   which extends struct BNInstructionInfo (core/binaryninjacore.h)
 
 	   tasks:
@@ -80,33 +81,33 @@ class SH4Architecture: public Architecture
 		size_t maxLen, InstructionInfo& result) override
 	{
 		char tmp[32];
-		struct decomp_result dr;
-
-		memset(&dr, 0, sizeof(dr));
-		if(decompose(addr, *(uint16_t *)data, &dr) != 0)
+		Instruction instr;
+		memset(&instr, 0, sizeof(instr));
+		uint16_t insword = (data[0]<<8) | data[1];
+		if(sh4_decompose(insword, &instr, addr) != 0)
 			return false;
 
-		switch(dr.opcode) {
+		switch(instr.opcode) {
 			case OPC_BSR:
 			case OPC_BSRF:
 			case OPC_JSR:
-				if(dr.operands_n == 1)
-					result.AddBranch(CallDestination, dr.operands[0].address);
+				if(instr.operands_n == 1)
+					result.AddBranch(CallDestination, instr.operands[0].address);
 				else
 					result.AddBranch(UnresolvedBranch);
 				break;
 
 			case OPC_BRA:
 			case OPC_JMP:
-				if(dr.operands_n == 1)
-					result.AddBranch(UnconditionalBranch, dr.operands[0].address);
+				if(instr.operands_n == 1)
+					result.AddBranch(UnconditionalBranch, instr.operands[0].address);
 				else
 					result.AddBranch(UnresolvedBranch);
 				break;
 
 			case OPC_BT:
 			case OPC_BF:
-				//result.AddBranch(TrueBranch, dr.operands[0].address);
+				//result.AddBranch(TrueBranch, instr.operands[0].address);
 				//result.AddBranch(FalseBranch, addr+2);
 				break;
 
@@ -130,92 +131,93 @@ class SH4Architecture: public Architecture
 		char buf[32];
 
 		/* decompose instruction */
-		struct decomp_result dr;
-		memset(&dr, 0, sizeof(dr));
-		if(decompose(addr, *(uint16_t *)data, &dr) != 0)
+		Instruction instr;
+		memset(&instr, 0, sizeof(instr));
+		uint16_t insword = (data[0]<<8) | data[1];
+		if(sh4_decompose(insword, &instr, addr) != 0)
 			return false;
-		if(!(dr.opcode > OPC_NONE && dr.opcode < OPC_MAXIMUM))
+		if(!(instr.opcode > OPC_NONE && instr.opcode < OPC_MAXIMUM))
 			return false;
 
 		/* opcode */
-		strcpy(buf, sh4_opc_strs[dr.opcode]);
+		strcpy(buf, sh4_opc_strs[instr.opcode]);
 		/* size modifier suffixes {.b, .w, .l} */
-		if(dr.length_suffix == LEN_SUFFIX_B)
+		if(instr.length_suffix == LEN_SUFFIX_B)
 			strcat(buf, ".b");
-		if(dr.length_suffix == LEN_SUFFIX_W)
+		if(instr.length_suffix == LEN_SUFFIX_W)
 			strcat(buf, ".w");
-		if(dr.length_suffix == LEN_SUFFIX_L)
+		if(instr.length_suffix == LEN_SUFFIX_L)
 			strcat(buf, ".l");
 		/* delay slot suffix .s or /s from doc */
-		if(dr.delay_slot)
+		if(instr.delay_slot)
 			strcat(buf, ".s");
 		/* conditional "/xxx" if this is a cmp */
-		if(dr.opcode == OPC_CMP || dr.opcode == OPC_FCMP) {
-			if(dr.cond > CMP_COND_NONE && dr.cond < CMP_COND_MAXIMUM) {
+		if(instr.opcode == OPC_CMP || instr.opcode == OPC_FCMP) {
+			if(instr.cond > CMP_COND_NONE && instr.cond < CMP_COND_MAXIMUM) {
 				strcat(buf, "/");
-				strcat(buf, sh4_cmp_cond_strs[dr.cond]);
+				strcat(buf, sh4_cmp_cond_strs[instr.cond]);
 			}
 		}
 		/* done */
 		result.emplace_back(InstructionToken, buf);
 
 		/* operands */
-		if(dr.operands_n)
+		if(instr.operands_n)
 			result.emplace_back(TextToken, " ");
 
-		for(int i=0; i < (dr.operands_n); ++i) {
+		for(int i=0; i < (instr.operands_n); ++i) {
 			char buf[32];
 
-			switch(dr.operands[i].type) {
+			switch(instr.operands[i].type) {
 				case GPREG:
 				case BANKREG:
 				case CTRLREG:
 				case SYSREG:
 				case FPUREG:
-					result.emplace_back(RegisterToken, sh4_reg_strs[dr.operands[i].regA]);
+					result.emplace_back(RegisterToken, sh4_reg_strs[instr.operands[i].regA]);
 					break;
 
 				case IMMEDIATE:
 					result.emplace_back(TextToken, "#");
-					sprintf(buf, "%d", dr.operands[i].immediate);
+					sprintf(buf, "%d", instr.operands[i].immediate);
 					result.emplace_back(IntegerToken, buf);
 					break;
 
 				case ADDRESS:
-					sprintf(buf, "0x%016llx", dr.operands[i].address);
+					sprintf(buf, "0x%016llx", instr.operands[i].address);
 					result.emplace_back(PossibleAddressToken, buf);
 					break;
 
 				case DEREF_REG:
 					result.emplace_back(BeginMemoryOperandToken, "@");
 
-					if(dr.operands[i].flags & SH4_FLAG_PRE_INCREMENT)
+					if(instr.operands[i].flags & SH4_FLAG_PRE_INCREMENT)
 						result.emplace_back(TextToken, "+");
-					if(dr.operands[i].flags & SH4_FLAG_PRE_DECREMENT)
+					if(instr.operands[i].flags & SH4_FLAG_PRE_DECREMENT)
 						result.emplace_back(TextToken, "-");
 
-					result.emplace_back(RegisterToken, sh4_reg_strs[dr.operands[i].regA]);
+					result.emplace_back(RegisterToken, sh4_reg_strs[instr.operands[i].regA]);
 
-					if(dr.operands[i].flags & SH4_FLAG_POST_INCREMENT)
+					if(instr.operands[i].flags & SH4_FLAG_POST_INCREMENT)
 						result.emplace_back(TextToken, "+");
-					if(dr.operands[i].flags & SH4_FLAG_POST_DECREMENT)
+					if(instr.operands[i].flags & SH4_FLAG_POST_DECREMENT)
 						result.emplace_back(TextToken, "-");
 					break;
 
 				case DEREF_REG_REG:
 					result.emplace_back(BeginMemoryOperandToken, "@(");
-					result.emplace_back(RegisterToken, sh4_reg_strs[dr.operands[i].regA]);
+					result.emplace_back(RegisterToken, sh4_reg_strs[instr.operands[i].regA]);
 					result.emplace_back(OperandSeparatorToken, ",");
-					result.emplace_back(RegisterToken, sh4_reg_strs[dr.operands[i].regB]);
+					result.emplace_back(RegisterToken, sh4_reg_strs[instr.operands[i].regB]);
 					result.emplace_back(EndMemoryOperandToken, ")");
 					break;
 
 				case DEREF_REG_IMM:
 					result.emplace_back(BeginMemoryOperandToken, "@(");
-					sprintf(buf, "%d", dr.operands[i].displacement);
+					sprintf(buf, "%d", instr.operands[i].displacement);
 					result.emplace_back(IntegerToken, buf);
 					result.emplace_back(OperandSeparatorToken, ",");
-					result.emplace_back(RegisterToken, sh4_reg_strs[dr.operands[i].regA]);
+					result.emplace_back(RegisterToken, sh4_reg_strs[instr.operands[i].regA]);
 					result.emplace_back(EndMemoryOperandToken, ")");
 					break;
 
@@ -224,7 +226,7 @@ class SH4Architecture: public Architecture
 					break;
 			}
 
-			if(i != dr.operands_n-1)
+			if(i != instr.operands_n-1)
 				result.emplace_back(OperandSeparatorToken, ",");
 		}
 
@@ -235,25 +237,26 @@ class SH4Architecture: public Architecture
 	{
 		//printf("%s()\n", __func__);
 
-		/* decompose instruction, any errors? return false */
-		struct decomp_result dr;
-		memset(&dr, 0, sizeof(dr));
-		if(decompose(addr, *(uint16_t *)data, &dr) != 0)
+		/* decompose instruction */
+		Instruction instr;
+		memset(&instr, 0, sizeof(instr));
+		uint16_t insword = (data[0]<<8) | data[1];
+		if(sh4_decompose(insword, &instr, addr) != 0)
 			return false;
-		if(!(dr.opcode > OPC_NONE && dr.opcode < OPC_MAXIMUM))
+		if(!(instr.opcode > OPC_NONE && instr.opcode < OPC_MAXIMUM))
 			return false;
 
-		switch(dr.opcode) {
+		switch(instr.opcode) {
 			/* there are 3 "call subroutine" instrucitons in SH4 */
 			/* (1/3) JumpSubRoutine <reg> */
 			/* eg: 0B 41    jsr @r1 */
 			case OPC_JSR:
-				il.AddInstruction(il.Call(il.Register(4, dr.operands[0].regA)));
+				il.AddInstruction(il.Call(il.Register(4, instr.operands[0].regA)));
 				break;
 
 			/* (2/3) branch subroutine, PC = (PC+4) + 2*disp */
 			case OPC_BSR:
-				il.AddInstruction(il.Call(il.ConstPointer(4, dr.operands[0].address)));
+				il.AddInstruction(il.Call(il.ConstPointer(4, instr.operands[0].address)));
 				break;
 
 			/* (3/3) branch subroutine far, PC = (PC+4) + Rn */
@@ -261,28 +264,28 @@ class SH4Architecture: public Architecture
 				il.AddInstruction(il.Call(
 					il.Add(4,
 						il.Add(4, il.Register(4, PC), il.Const(4, 4)),
-						il.Register(4, dr.operands[0].regA)
+						il.Register(4, instr.operands[0].regA)
 					)
 				));
 				break;
 
 			case OPC_JMP:
-				il.AddInstruction(il.Jump(il.Register(4, dr.operands[0].regA)));
+				il.AddInstruction(il.Jump(il.Register(4, instr.operands[0].regA)));
 				break;
 
 			case OPC_MOV:
 				/* eg: 00 EE    mov #0, r14 */
-				if(dr.operands_n == 2 && dr.operands[0].type == IMMEDIATE && dr.operands[1].type == GPREG)
+				if(instr.operands_n == 2 && instr.operands[0].type == IMMEDIATE && instr.operands[1].type == GPREG)
 					il.AddInstruction(il.SetRegister(4,
-						dr.operands[1].regA,
-						il.Const(4, dr.operands[0].immediate)
+						instr.operands[1].regA,
+						il.Const(4, instr.operands[0].immediate)
 					));
 				else
 				/* eg: 04 D4    mov.l 0x004021f2, r4 */
-				if(dr.operands_n == 2 && dr.operands[0].type == ADDRESS && dr.operands[1].type == GPREG)
+				if(instr.operands_n == 2 && instr.operands[0].type == ADDRESS && instr.operands[1].type == GPREG)
 					il.AddInstruction(il.SetRegister(4,
-						dr.operands[1].regA,
-						il.Load(4, il.ConstPointer(4, dr.operands[0].address))
+						instr.operands[1].regA,
+						il.Load(4, il.ConstPointer(4, instr.operands[0].address))
 					));
 				else
 					il.AddInstruction(il.Nop());
