@@ -56,6 +56,8 @@ const char *sh4_cmp_cond_strs[] = {
 	"eq", "ge", "gt", "hi", "hs", "pl", "pz", "str"
 };
 
+const char *sh4_len_suffix_strs[] = { "", ".b", ".w", ".l" };
+
 int sh4_disassemble(Instruction *instr, char *result, size_t buf_sz)
 {
 	/* default answer */
