@@ -18,7 +18,7 @@ def disassemble(addr, insnum):
 	if not arch:
 		arch = binaryninja.Architecture['sh4']
 		print(arch)
-	data = struct.pack('>H', insnum)
+	data = struct.pack('<H', insnum)
 	(tokens, length) = arch.get_instruction_text(data, addr)
 	if not tokens or length==0:
 		return None
