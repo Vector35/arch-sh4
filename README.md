@@ -6,6 +6,9 @@ This is the SH4 plugin that ships with Binary Ninja.
 
 - [arch_sh4.cpp](./arch_sh4.cpp) implements the Architecture class
 - [disassembler/*](./disassembler/) is the disassembler
+- [disassembler/disasm_test.py](./disassembler/disasm_test.py) tests disassembler in isolation
+- [test_disasm.py](./test_disasm.py) tests disassembler through the binja/architecture plugin
+- [sh4test.py](./sh4test.py) tests some lifting
 
 ## Testing
 
