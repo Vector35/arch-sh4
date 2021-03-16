@@ -549,12 +549,18 @@ public:
 
 extern "C"
 {
+	BN_DECLARE_CORE_ABI_VERSION
+
+#ifdef DEMO_VERSION
+	bool Sh4PluginInit()
+#else
 	BINARYNINJAPLUGIN bool CorePluginInit()
+#endif
 	{
 		#define EM_SUPERH 0x2a
 
-		printf("ARCH SH4 compiled at %s %s\n", __DATE__, __TIME__);
-		LogInfo("ARCH SH4 compiled at %s %s\n", __DATE__, __TIME__);
+		//printf("ARCH SH4 compiled at %s %s\n", __DATE__, __TIME__);
+		//LogInfo("ARCH SH4 compiled at %s %s\n", __DATE__, __TIME__);
 
 		/* 1) architecture */
 		Architecture* archSh4 = new SH4Architecture("sh4", LittleEndian);

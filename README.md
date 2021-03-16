@@ -44,9 +44,9 @@ Building the architecture plugin requires `cmake` 3.9 or above. You will also ne
 First, set the `BN_API_PATH` environment variable to the path containing the
 Binary Ninja API source tree.
 
-Run `cmake`. This can be done either from a separate build directory or from the source
+Run `cmake <path>`. This can be done either from a separate build directory or from the source
 directory. If your app is installed in a non-default location, set BN_INSTALL_DIR in your
-cmake invocation, like `cmake -DBN_INSTALL_DIR=/Applications/Binary\ Ninja\ DEV.app/`.
+cmake invocation, like `cmake -DBN_INSTALL_DIR=/Applications/Binary\ Ninja\ DEV.app/ <path>`.
 Once that is complete, run `make` in the build directory to compile the plugin.
 
 The plugin can be found in the root of the build directory as `libarch_sh4.so`,
