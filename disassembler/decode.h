@@ -99,4 +99,10 @@ struct Instruction
 	typedef struct Instruction Instruction;
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 int sh4_decompose(uint16_t insword, Instruction *instr, uint64_t address);
+#ifdef __cplusplus
+}
+#endif
