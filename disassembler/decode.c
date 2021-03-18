@@ -870,7 +870,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		instr->opcode = OPC_FMOV;
-		instr->delay_slot = true;
 		instr->operands[0].type = DEREF_REG_REG;
 		instr->operands[0].regA = R0;
 		instr->operands[0].regB = (SH4_REGISTER)(R0 + m);
@@ -884,7 +883,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		instr->opcode = OPC_FMOV;
-		instr->delay_slot = true;
 		instr->operands[0].flags |= SH4_FLAG_POST_INCREMENT;
 		instr->operands[0].type = DEREF_REG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + m);
@@ -898,7 +896,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		instr->opcode = OPC_FMOV;
-		instr->delay_slot = true;
 		instr->operands[0].type = DEREF_REG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + m);
 		instr->operands[1].type = FPUREG;
@@ -911,7 +908,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		instr->opcode = OPC_FMOV;
-		instr->delay_slot = true;
 		instr->operands[0].type = FPUREG;
 		instr->operands[0].regA = (SH4_REGISTER)(FR0 + m);
 		instr->operands[1].type = DEREF_REG_REG;
@@ -925,7 +921,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		instr->opcode = OPC_FMOV;
-		instr->delay_slot = true;
 		instr->operands[0].type = FPUREG;
 		instr->operands[0].regA = (SH4_REGISTER)(FR0 + m);
 		instr->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
@@ -939,7 +934,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		uint16_t m = (insword & 0xf0)>>4;
 		uint16_t n = (insword & 0xf00)>>8;
 		instr->opcode = OPC_FMOV;
-		instr->delay_slot = true;
 		instr->operands[0].type = FPUREG;
 		instr->operands[0].regA = (SH4_REGISTER)(FR0 + m);
 		instr->operands[1].type = DEREF_REG;
@@ -2220,7 +2214,7 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands_n = 0;
 	}
 
-	// 0000000001011000 "sett"
+	// 0000000001011000 "sets"
 	else if(insword == 0x58) {
 		instr->opcode = OPC_SETS;
 		instr->operands_n = 0;

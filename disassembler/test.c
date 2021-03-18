@@ -1,6 +1,6 @@
 /*
-	lldb ./cmdline 1234
-	b decode
+	lldb ./test -- 1234
+	b sh4_decompose
 	r
 */
 #include <stdio.h>
