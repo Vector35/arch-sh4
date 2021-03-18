@@ -43,7 +43,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "add #%d,r%d", i, n);
 	}
 
 	// 0011nnnnmmmm1100 "add Rm,Rn"
@@ -56,7 +55,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "add r%d,r%d", m, n);
 	}
 
 	// 0011nnnnmmmm1110 "addc Rm,Rn"
@@ -69,7 +67,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "addc r%d,r%d", m, n);
 	}
 
 	// 0011nnnnmmmm1111 "addv Rm,Rn"
@@ -82,7 +79,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "addv r%d,r%d", m, n);
 	}
 
 	// 11001001iiiiiiii "and #imm,r0"
@@ -94,7 +90,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = R0;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "and #%d,r0", i);
 	}
 
 	// 0010nnnnmmmm1001 "and Rm,Rn"
@@ -107,7 +102,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "and r%d,r%d", m, n);
 	}
 
 	// 11001101iiiiiiii "and.b #imm,@(r0,gbr)"
@@ -121,7 +115,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = R0;
 		instr->operands[1].regB = GBR;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "and.b #%d,@(r0,gbr)", i);
 	}
 
 	// 10001011dddddddd "bf label"
@@ -131,7 +124,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = ADDRESS;
 		instr->operands[0].address = d;
 		instr->operands_n = 1;
-		//sprintf(instr->string, "bf 0x%016llx", d);
 	}
 
 	// 10001111dddddddd "bf.s label"
@@ -142,7 +134,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = ADDRESS;
 		instr->operands[0].address = d;
 		instr->operands_n = 1;
-		//sprintf(instr->string, "bf.s 0x%016llx", d);
 	}
 
 	// 1010dddddddddddd "bra label"
@@ -152,7 +143,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = ADDRESS;
 		instr->operands[0].address = d;
 		instr->operands_n = 1;
-		//sprintf(instr->string, "bra 0x%016llx", d);
 	}
 
 	// 0000mmmm00100011 "braf Rm"
@@ -162,7 +152,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + m);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "braf r%d", m);
 	}
 
 	// 1011dddddddddddd "bsr label"
@@ -172,7 +161,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = ADDRESS;
 		instr->operands[0].address = d;
 		instr->operands_n = 1;
-		//sprintf(instr->string, "bsr 0x%016llx", d);
 	}
 
 	// 0000mmmm00000011 "bsrf Rm"
@@ -182,7 +170,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + m);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "bsrf r%d", m);
 	}
 
 	// 10001001dddddddd "bt label"
@@ -192,7 +179,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = ADDRESS;
 		instr->operands[0].address = d;
 		instr->operands_n = 1;
-		//sprintf(instr->string, "bt 0x%016llx", d);
 	}
 
 	// 10001101dddddddd "bt.s label"
@@ -203,28 +189,24 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = ADDRESS;
 		instr->operands[0].address = d;
 		instr->operands_n = 1;
-		//sprintf(instr->string, "bt.s 0x%016llx", d);
 	}
 
 	// 0000000000101000 "clrmac"
 	else if(insword == 0x28) {
 		instr->opcode = OPC_CLRMAC;
 		instr->operands_n = 0;
-		//sprintf(instr->string, "clrmac");
 	}
 
 	// 0000000001001000 "clrs"
 	else if(insword == 0x48) {
 		instr->opcode = OPC_CLRS;
 		instr->operands_n = 0;
-		//sprintf(instr->string, "clrs");
 	}
 
 	// 0000000000001000 "clrt"
 	else if(insword == 0x8) {
 		instr->opcode = OPC_CLRT;
 		instr->operands_n = 0;
-		//sprintf(instr->string, "clrt");
 	}
 
 	// 10001000iiiiiiii "cmp/eq #imm,r0"
@@ -237,7 +219,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = R0;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "cmp/eq #%d,r0", i);
 	}
 
 	// 0011nnnnmmmm0000 "cmp/eq Rm,Rn"
@@ -251,7 +232,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "cmp/eq r%d,r%d", m, n);
 	}
 
 	// 0011nnnnmmmm0011 "cmp/ge Rm,Rn"
@@ -265,7 +245,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "cmp/ge r%d,r%d", m, n);
 	}
 
 	// 0011nnnnmmmm0111 "cmp/gt Rm,Rn"
@@ -279,7 +258,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "cmp/gt r%d,r%d", m, n);
 	}
 
 	// 0011nnnnmmmm0110 "cmp/hi Rm,Rn"
@@ -293,7 +271,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "cmp/hi r%d,r%d", m, n);
 	}
 
 	// 0011nnnnmmmm0010 "cmp/hs Rm,Rn"
@@ -307,7 +284,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "cmp/hs r%d,r%d", m, n);
 	}
 
 	// 0100nnnn00010101 "cmp/pl Rn"
@@ -318,7 +294,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "cmp/pl r%d", n);
 	}
 
 	// 0100nnnn00010001 "cmp/pz Rn"
@@ -329,7 +304,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "cmp/pz r%d", n);
 	}
 
 	// 0010nnnnmmmm1100 "cmp/str Rm,Rn"
@@ -343,7 +317,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "cmp/str r%d,r%d", m, n);
 	}
 
 	// 0010nnnnmmmm0111 "div0s Rm,Rn"
@@ -356,14 +329,12 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "div0s r%d,r%d", m, n);
 	}
 
 	// 0000000000011001 "div0u"
 	else if(insword == 0x19) {
 		instr->opcode = OPC_DIV0U;
 		instr->operands_n = 0;
-		//sprintf(instr->string, "div0u");
 	}
 
 	// 0011nnnnmmmm0100 "div1 Rm,Rn"
@@ -376,7 +347,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "div1 r%d,r%d", m, n);
 	}
 
 	// 0011nnnnmmmm1101 "dmuls.l Rm,Rn"
@@ -390,7 +360,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "dmuls.l r%d,r%d", m, n);
 	}
 
 	// 0011nnnnmmmm0101 "dmulu.l Rm,Rn"
@@ -404,7 +373,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "dmulu.l r%d,r%d", m, n);
 	}
 
 	// 0100nnnn00010000 "dt Rn"
@@ -414,7 +382,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "dt r%d", n);
 	}
 
 	// 0110nnnnmmmm1110 "exts.b Rm,Rn"
@@ -428,7 +395,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "exts.b r%d,r%d", m, n);
 	}
 
 	// 0110nnnnmmmm1111 "exts.w Rm,Rn"
@@ -442,7 +408,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "exts.w r%d,r%d", m, n);
 	}
 
 	// 0110nnnnmmmm1100 "extu.b Rm,Rn"
@@ -456,7 +421,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "extu.b r%d,r%d", m, n);
 	}
 
 	// 0110nnnnmmmm1101 "extu.w Rm,Rn"
@@ -470,7 +434,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "extu.w r%d,r%d", m, n);
 	}
 
 	// 1111nnn001011101 "fabs DRn"
@@ -480,7 +443,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = FPUREG;
 		instr->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "fabs fr%d", n);
 	}
 
 	// 1111nnnn01011101 "fabs FRn"
@@ -490,7 +452,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = FPUREG;
 		instr->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "fabs fr%d", n);
 	}
 
 	// 1111nnn0mmmm0000 "fadd DRm,DRn"
@@ -503,7 +464,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fadd fr%d,fr%d", m, n);
 	}
 
 	// 1111nnnnmmmm0000 "fadd FRm,FRn"
@@ -516,7 +476,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fadd fr%d,fr%d", m, n);
 	}
 
 	// 1111nnn0mmmm0100 "fcmp/eq DRm,DRn"
@@ -530,7 +489,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fcmp/eq fr%d,fr%d", m, n);
 	}
 
 	// 1111nnnnmmmm0100 "fcmp/eq FRm,FRn"
@@ -544,7 +502,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fcmp/eq fr%d,fr%d", m, n);
 	}
 
 	// 1111nnn0mmm00101 "fcmp/gt DRm,DRn"
@@ -558,7 +515,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fcmp/gt fr%d,fr%d", m, n);
 	}
 
 	// 1111nnnnmmmm0101 "fcmp/gt FRm,FRn"
@@ -572,7 +528,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fcmp/gt fr%d,fr%d", m, n);
 	}
 
 	// 1111mmm010111101 "fcnvds DRm,fpul"
@@ -584,7 +539,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = SYSREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FPUL);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fcnvds dr%d,fpul", m);
 	}
 
 	// 1111nnn010101101 "fcnvsd fpul,DRn"
@@ -596,7 +550,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(DR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fcnvsd fpul,dr%d", n);
 	}
 
 	// 1111nnn0mmmm0011 "fdiv DRm,DRn"
@@ -609,7 +562,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fdiv fr%d,fr%d", m, n);
 	}
 
 	// 1111nnnnmmmm0011 "fdiv FRm,FRn"
@@ -622,7 +574,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fdiv fr%d,fr%d", m, n);
 	}
 
 	// 1111nnmm11101101 "fipr fvm,fvn"
@@ -635,7 +586,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FV0 + 4*n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fipr fv%d,fv%d", 4*m, 4*n);
 	}
 
 	// 1111nnnn10001101 "fldi0 FRn"
@@ -645,7 +595,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = FPUREG;
 		instr->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "fldi0 fr%d", n);
 	}
 
 	// 1111nnnn10011101 "fldi1 FRn"
@@ -655,7 +604,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = FPUREG;
 		instr->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "fldi1 fr%d", n);
 	}
 
 	// 1111mmmm00011101 "flds FRm,fpul"
@@ -667,7 +615,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = SYSREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FPUL);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "flds fr%d,fpul", m);
 	}
 
 	// 1111nnn000101101 "float fpul,DRn"
@@ -679,7 +626,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "float fpul,fr%d", n);
 	}
 
 	// 1111nnnn00101101 "float fpul,FRn"
@@ -691,7 +637,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "float fpul,fr%d", n);
 	}
 
 	// 1111nnnnmmmm1110 "fmac fr0,FRm,FRn"
@@ -706,7 +651,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[2].type = FPUREG;
 		instr->operands[2].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 3;
-		//sprintf(instr->string, "fmac fr0,fr%d,fr%d", m, n);
 	}
 
 	// 1111nnn0mmm01100 "fmov DRm,DRn"
@@ -719,7 +663,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov fr%d,fr%d", m, n);
 	}
 
 	// 1111nnn1mmm01100 "fmov DRm,XDn"
@@ -732,7 +675,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov fr%d,fr%d", m, n);
 	}
 
 	// 1111nnnnmmmm1100 "fmov FRm,FRn"
@@ -745,7 +687,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov fr%d,fr%d", m, n);
 	}
 
 	// 1111nnn0mmm11100 "fmov XDm,DRn"
@@ -758,7 +699,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov XD%d,fr%d", m, n);
 	}
 
 	// 1111nnn1mmm11100 "fmov XDm,XDn"
@@ -771,7 +711,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov XD%d,fr%d", m, n);
 	}
 
 	// 1111nnn0mmmm0110 "fmov @(r0,Rm),DRn"
@@ -785,7 +724,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov @(r0,r%d),fr%d", m, n);
 	}
 
 	// 1111nnnnmmmm0110 "fmov @(r0,Rm),XDn"
@@ -799,7 +737,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov @(r0,r%d),fr%d", m, n);
 	}
 
 	// 1111nnn0mmmm1001 "fmov @Rm+,DRn"
@@ -813,7 +750,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov @r%d+,fr%d", m, n);
 	}
 
 	// 1111nnnnmmmm1001 "fmov @Rm+,XDn"
@@ -827,7 +763,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov @r%d+,fr%d", m, n);
 	}
 
 	// 1111nnn0mmmm1000 "fmov @Rm,DRn"
@@ -840,7 +775,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov @r%d,fr%d", m, n);
 	}
 
 	// 1111nnnnmmmm1000 "fmov @Rm,XDn"
@@ -853,7 +787,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov @r%d,fr%d", m, n);
 	}
 
 	// 1111nnnnmmm00111 "fmov DRm,@(r0,Rn)"
@@ -867,7 +800,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = R0;
 		instr->operands[1].regB = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov fr%d,@(r0,r%d)", m, n);
 	}
 
 	// 1111nnnnmmm01011 "fmov DRm,@-Rn"
@@ -881,7 +813,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov fr%d,@-r%d", m, n);
 	}
 
 	// 1111nnnnmmm01010 "fmov DRm,@Rn"
@@ -894,7 +825,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov fr%d,@r%d", m, n);
 	}
 
 	// 1111nnnnmmmm0111 "fmov XDm,@(r0,Rn)"
@@ -908,7 +838,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = R0;
 		instr->operands[1].regB = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov fr%d,@(r0,r%d)", m, n);
 	}
 
 	// 1111nnnnmmm11011 "fmov XDm,@-Rn"
@@ -922,7 +851,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov fr%d,@-r%d", m, n);
 	}
 
 	// 1111nnnnmmmm1010 "fmov XDm,@Rn"
@@ -935,7 +863,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov fr%d,@r%d", m, n);
 	}
 
 	// 1111nnnnmmmm0110 "fmov.s @(r0,Rm),FRn"
@@ -950,7 +877,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov.s @(r0,r%d),fr%d", m, n);
 	}
 
 	// 1111nnnnmmmm1001 "fmov.s @Rm+,FRn"
@@ -965,7 +891,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov.s @r%d+,fr%d", m, n);
 	}
 
 	// 1111nnnnmmmm1000 "fmov.s @Rm,FRn"
@@ -979,7 +904,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov.s @r%d,fr%d", m, n);
 	}
 
 	// 1111nnnnmmmm0111 "fmov.s FRm,@(r0,Rn)"
@@ -994,7 +918,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = R0;
 		instr->operands[1].regB = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov.s fr%d,@(r0,r%d)", m, n);
 	}
 
 	// 1111nnnnmmmm1011 "fmov.s FRm,@-Rn"
@@ -1009,7 +932,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov.s fr%d,@-r%d", m, n);
 	}
 
 	// 1111nnnnmmmm1010 "fmov.s FRm,@Rn"
@@ -1023,7 +945,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmov.s fr%d,@r%d", m, n);
 	}
 
 	// 1111nnn0mmmm0010 "fmul DRm,DRn"
@@ -1036,7 +957,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmul fr%d,fr%d", m, n);
 	}
 
 	// 1111nnnnmmmm0010 "fmul FRm,FRn"
@@ -1049,7 +969,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fmul fr%d,fr%d", m, n);
 	}
 
 	// 1111nnn001001101 "fneg DRn"
@@ -1059,7 +978,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = FPUREG;
 		instr->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "fneg fr%d", n);
 	}
 
 	// 1111nnnn01001101 "fneg FRn"
@@ -1069,21 +987,18 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = FPUREG;
 		instr->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "fneg fr%d", n);
 	}
 
 	// 1111101111111101 "frchg"
 	else if(insword == 0xfbfd) {
 		instr->opcode = OPC_FRCHG;
 		instr->operands_n = 0;
-		//sprintf(instr->string, "frchg");
 	}
 
 	// 1111001111111101 "fschg"
 	else if(insword == 0xf3fd) {
 		instr->opcode = OPC_FSCHG;
 		instr->operands_n = 0;
-		//sprintf(instr->string, "fschg");
 	}
 
 	// 1111nnn001101101 "fsqrt DRn"
@@ -1093,7 +1008,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = FPUREG;
 		instr->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "fsqrt fr%d", n);
 	}
 
 	// 1111nnnn01101101 "fsqrt FRn"
@@ -1103,7 +1017,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = FPUREG;
 		instr->operands[0].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "fsqrt fr%d", n);
 	}
 
 	// 1111nnnn00001101 "fsts fpul,FRn"
@@ -1115,7 +1028,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fsts fpul,fr%d", n);
 	}
 
 	// 1111nnn0mmmm0001 "fsub DRm,DRn"
@@ -1128,7 +1040,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fsub fr%d,fr%d", m, n);
 	}
 
 	// 1111nnnnmmmm0001 "fsub FRm,FRn"
@@ -1141,7 +1052,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FR0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fsub fr%d,fr%d", m, n);
 	}
 
 	// 1111mmm000111101 "ftrc DRm,fpul"
@@ -1153,7 +1063,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = SYSREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FPUL);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ftrc fr%d,fpul", m);
 	}
 
 	// 1111mmmm00111101 "ftrc FRm,fpul"
@@ -1165,7 +1074,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = SYSREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FPUL);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ftrc fr%d,fpul", m);
 	}
 
 	// 1111nn0111111101 "ftrv xmtrx,fvn"
@@ -1177,7 +1085,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FV0 + 4*n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ftrv xmtrx,fv%d", 4*n);
 	}
 
 	// 0100mmmm00101011 "jmp @Rm"
@@ -1187,7 +1094,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = DEREF_REG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + m);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "jmp @r%d", m);
 	}
 
 	// 0100mmmm00001011 "jsr @Rm"
@@ -1197,7 +1103,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = DEREF_REG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + m);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "jsr @r%d", m);
 	}
 
 	// 0100mmmm11110110 "ldc Rm,dbr"
@@ -1211,7 +1116,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = CTRLREG;
 		instr->operands[1].regA = (SH4_REGISTER)(DBR);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc.l @r%d+,dbr", m);
 	}
 
 	// MANUAL
@@ -1223,7 +1127,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = CTRLREG;
 		instr->operands[1].regA = (SH4_REGISTER)(DBR);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc r%d,dbr", m);
 	}
 
 	// 0100mmmm00011110 "ldc Rm,gbr"
@@ -1235,7 +1138,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = CTRLREG;
 		instr->operands[1].regA = GBR;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc r%d,gbr", m);
 	}
 
 	// 0100mmmm1nnn1110 "ldc Rm,Rn_bank"
@@ -1248,7 +1150,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = BANKREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0_BANK0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc r%d,r%d_bank", m, n);
 	}
 
 	// 0100mmmm01001110 "ldc Rm,spc"
@@ -1260,7 +1161,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = CTRLREG;
 		instr->operands[1].regA = (SH4_REGISTER)(SPC);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc r%d,spc", m);
 	}
 
 	// 0100mmmm00001110 "ldc Rm,sr"
@@ -1272,7 +1172,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = CTRLREG;
 		instr->operands[1].regA = (SH4_REGISTER)(SR);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc r%d,sr", m);
 	}
 
 	// 0100mmmm00111110 "ldc Rm,ssr"
@@ -1284,7 +1183,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = CTRLREG;
 		instr->operands[1].regA = (SH4_REGISTER)(SSR);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc r%d,ssr", m);
 	}
 
 	// MANUAL
@@ -1297,7 +1195,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = CTRLREG;
 		instr->operands[1].regA = (SH4_REGISTER)(SGR);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc r%d,sgr", m);
 	}
 
 	// 0100mmmm00101110 "ldc Rm,vbr"
@@ -1309,7 +1206,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = CTRLREG;
 		instr->operands[1].regA = (SH4_REGISTER)(VBR);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc r%d,vbr", m);
 	}
 
 	// 0100mmmm11110110 "ldc.l @Rm+,dbr"
@@ -1323,7 +1219,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = CTRLREG;
 		instr->operands[1].regA = (SH4_REGISTER)(DBR);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc.l @r%d+,dbr", m);
 	}
 
 	// MANUAL
@@ -1338,16 +1233,14 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 			instr->operands[0].regA = (SH4_REGISTER)(R0 + m);
 			instr->operands[1].type = CTRLREG;
 			instr->operands[1].regA = cr2id[n];
-			//sprintf(instr->string, "ldc r%d,%s", m, cr2str[n]);
-		}
+			}
 		else {
 			instr->opcode = OPC_LDC;
 			instr->operands[0].type = GPREG;
 			instr->operands[0].regA = (SH4_REGISTER)(R0 + m);
 			instr->operands[1].type = BANKREG;
 			instr->operands[1].regA = (SH4_REGISTER)(R0_BANK0 + n);
-			//sprintf(instr->string, "ldc r%d,r%d_bank", m, n);
-		}
+			}
 	}
 
 	// 0100mmmm00010111 "ldc.l @Rm+,gbr"
@@ -1361,7 +1254,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = CTRLREG;
 		instr->operands[1].regA = GBR;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc.l @r%d+,gbr", m);
 	}
 
 	// 0100mmmm1nnn0111 "ldc.l @Rm+,Rn_bank"
@@ -1376,7 +1268,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = BANKREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0_BANK0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc.l @r%d+,r%d_bank", m, n);
 	}
 
 	// 0100mmmm01000111 "ldc.l @Rm+,spc"
@@ -1390,7 +1281,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = CTRLREG;
 		instr->operands[1].regA = (SH4_REGISTER)(SPC);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc.l @r%d+,spc", m);
 	}
 
 	// 0100mmmm00000111 "ldc.l @Rm+,sr"
@@ -1404,7 +1294,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = CTRLREG;
 		instr->operands[1].regA = (SH4_REGISTER)(SR);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc.l @r%d+,sr", m);
 	}
 
 	// 0100mmmm00110111 "ldc.l @Rm+,ssr"
@@ -1418,7 +1307,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = CTRLREG;
 		instr->operands[1].regA = (SH4_REGISTER)(SSR);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc.l @r%d+,ssr", m);
 	}
 
 	// MANUAL
@@ -1433,7 +1321,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = CTRLREG;
 		instr->operands[1].regA = (SH4_REGISTER)(SGR);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc.l @r%d+,sgr", m);
 	}
 
 	// 0100mmmm00100111 "ldc.l @Rm+,vbr"
@@ -1447,7 +1334,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = CTRLREG;
 		instr->operands[1].regA = (SH4_REGISTER)(VBR);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "ldc.l @r%d+,vbr", m);
 	}
 
 	// MANUAL
@@ -1464,8 +1350,7 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 			instr->operands[0].regA = (SH4_REGISTER)(R0 + m);
 			instr->operands[1].type = CTRLREG;
 			instr->operands[1].regA = cr2id[n];
-			//sprintf(instr->string, "ldc.l @r%d+,%s", m, cr2str[n]);
-		}
+			}
 		else {
 			instr->opcode = OPC_LDC;
 			instr->length_suffix = LEN_SUFFIX_L;
@@ -1474,8 +1359,7 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 			instr->operands[0].regA = (SH4_REGISTER)(R0 + m);
 			instr->operands[1].type = BANKREG;
 			instr->operands[1].regA = (SH4_REGISTER)(R0_BANK0 + n);
-			//sprintf(instr->string, "ldc.l @r%d+,r%d_bank", m, n);
-		}
+			}
 	}
 
 	// 0100mmmm01101010 "lds Rm,fpscr"
@@ -1487,7 +1371,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = SYSREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FPSCR);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "lds r%d,fpscr", m);
 	}
 
 	// 0100mmmm01011010 "lds Rm,fpul"
@@ -1499,7 +1382,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = SYSREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FPUL);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "lds r%d,fpul", m);
 	}
 
 	// 0100mmmm00001010 "lds Rm,mach"
@@ -1511,7 +1393,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = SYSREG;
 		instr->operands[1].regA = (SH4_REGISTER)(MACH);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "lds r%d,mach", m);
 	}
 
 	// 0100mmmm00011010 "lds Rm,macl"
@@ -1523,7 +1404,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = SYSREG;
 		instr->operands[1].regA = (SH4_REGISTER)(MACL);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "lds r%d,macl", m);
 	}
 
 	// 0100mmmm00101010 "lds Rm,pr"
@@ -1535,7 +1415,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = SYSREG;
 		instr->operands[1].regA = (SH4_REGISTER)(PR);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "lds r%d,pr", m);
 	}
 
 	// 0100mmmm01100110 "lds.l @Rm+,fpscr"
@@ -1549,7 +1428,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = SYSREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FPSCR);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "lds.l @r%d+,fpscr", m);
 	}
 
 	// 0100mmmm01010110 "lds.l @Rm+,fpul"
@@ -1563,7 +1441,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = SYSREG;
 		instr->operands[1].regA = (SH4_REGISTER)(FPUL);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "lds.l @r%d+,fpul", m);
 	}
 
 	// 0100mmmm00000110 "lds.l @Rm+,mach"
@@ -1577,7 +1454,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = SYSREG;
 		instr->operands[1].regA = (SH4_REGISTER)(MACH);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "lds.l @r%d+,mach", m);
 	}
 
 	// 0100mmmm00010110 "lds.l @Rm+,macl"
@@ -1591,7 +1467,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = SYSREG;
 		instr->operands[1].regA = (SH4_REGISTER)(MACL);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "lds.l @r%d+,macl", m);
 	}
 
 	// 0100mmmm00100110 "lds.l @Rm+,pr"
@@ -1605,14 +1480,12 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = SYSREG;
 		instr->operands[1].regA = (SH4_REGISTER)(PR);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "lds.l @r%d+,pr", m);
 	}
 
 	// 0000000000111000 "ldtlb"
 	else if(insword == 0x38) {
 		instr->opcode = OPC_LDTLB;
 		instr->operands_n = 0;
-		//sprintf(instr->string, "ldtlb");
 	}
 
 	// 0000nnnnmmmm1111 "mac.l @Rm+,@Rn+"
@@ -1628,7 +1501,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mac.l @r%d+,@r%d+", m, n);
 	}
 
 	// 0100nnnnmmmm1111 "mac.w @Rm+,@Rn+"
@@ -1644,7 +1516,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mac.w @r%d+,@r%d+", m, n);
 	}
 
 	// 1110nnnniiiiiiii "mov #imm,Rn"
@@ -1657,7 +1528,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov #%d,r%d", i, n);
 	}
 
 	// 0110nnnnmmmm0011 "mov Rm,Rn"
@@ -1670,7 +1540,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov r%d,r%d", m, n);
 	}
 
 	// 0000nnnnmmmm1100 "mov.b @(r0,Rm),Rn"
@@ -1685,7 +1554,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.b @(r0,r%d),r%d", m, n);
 	}
 
 	// 11000100dddddddd "mov.b @(disp,gbr),r0"
@@ -1699,7 +1567,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = R0;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.b @(%d,gbr),r0", d);
 	}
 
 	// 10000100mmmmdddd "mov.b @(disp,Rm),r0"
@@ -1714,7 +1581,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = R0;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.b @(%d,r%d),r0", d, m);
 	}
 
 	// 0110nnnnmmmm0100 "mov.b @Rm+,Rn"
@@ -1729,7 +1595,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.b @r%d+,r%d", m, n);
 	}
 
 	// 0110nnnnmmmm0000 "mov.b @Rm,Rn"
@@ -1743,7 +1608,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.b @r%d,r%d", m, n);
 	}
 
 	// 11000000dddddddd "mov.b r0,@(disp,gbr)"
@@ -1757,7 +1621,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = GBR;
 		instr->operands[1].displacement = d;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.b r0,@(%d,gbr)", d);
 	}
 
 	// 10000000nnnndddd "mov.b r0,@(disp,Rn)"
@@ -1772,7 +1635,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands[1].displacement = d;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.b r0,@(%d,r%d)", d, n);
 	}
 
 	// 0000nnnnmmmm0100 "mov.b Rm,@(r0,Rn)"
@@ -1787,7 +1649,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = R0;
 		instr->operands[1].regB = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.b r%d,@(r0,r%d)", m, n);
 	}
 
 	// 0010nnnnmmmm0100 "mov.b Rm,@-Rn"
@@ -1802,7 +1663,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.b r%d,@-r%d", m, n);
 	}
 
 	// 0010nnnnmmmm0000 "mov.b Rm,@Rn"
@@ -1816,7 +1676,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.b r%d,@r%d", m, n);
 	}
 
 	// 0000nnnnmmmm1110 "mov.l @(r0,Rm),Rn"
@@ -1831,7 +1690,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.l @(r0,r%d),r%d", m, n);
 	}
 
 	// 11000110dddddddd "mov.l @(disp,gbr),r0"
@@ -1845,7 +1703,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = R0;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.l @(%d,gbr),r0", 4*d);
 	}
 
 	// 1101nnnndddddddd "mov.l @(disp,PC),Rn"
@@ -1860,7 +1717,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.l 0x%016llx,r%d", d, n);
 	}
 
 	// 0101nnnnmmmmdddd "mov.l @(disp,Rm),Rn"
@@ -1876,7 +1732,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.l @(%d,r%d),r%d", 4*d, m, n);
 	}
 
 	// 0110nnnnmmmm0110 "mov.l @Rm+,Rn"
@@ -1891,7 +1746,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.l @r%d+,r%d", m, n);
 	}
 
 	// 0110nnnnmmmm0010 "mov.l @Rm,Rn"
@@ -1905,7 +1759,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.l @r%d,r%d", m, n);
 	}
 
 	// 11000010dddddddd "mov.l r0,@(disp,gbr)"
@@ -1919,7 +1772,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = GBR;
 		instr->operands[1].displacement = 4*d;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.l r0,@(%d,gbr)", 4*d);
 	}
 
 	// 0000nnnnmmmm0110 "mov.l Rm,@(r0,Rn)"
@@ -1934,7 +1786,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = R0;
 		instr->operands[1].regB = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.l r%d,@(r0,r%d)", m, n);
 	}
 
 	// 0001nnnnmmmmdddd "mov.l Rm,@(disp,Rn)"
@@ -1950,7 +1801,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands[1].displacement = 4*d;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.l r%d,@(%d,r%d)", m, 4*d, n);
 	}
 
 	// 0010nnnnmmmm0110 "mov.l Rm,@-Rn"
@@ -1965,7 +1815,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.l r%d,@-r%d", m, n);
 	}
 
 	// 0010nnnnmmmm0010 "mov.l Rm,@Rn"
@@ -1979,7 +1828,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.l r%d,@r%d", m, n);
 	}
 
 	// 0000nnnnmmmm1101 "mov.w @(r0,Rm),Rn"
@@ -1994,7 +1842,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.w @(r0,r%d),r%d", m, n);
 	}
 
 	// 11000101dddddddd "mov.w @(disp,gbr),r0"
@@ -2008,7 +1855,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = R0;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.w @(%d,gbr),r0", 2*d);
 	}
 
 	// 1001nnnndddddddd "mov.w dddddddd,Rn"
@@ -2023,7 +1869,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.w 0x%016x,r%d", d, n);
 	}
 
 	// 10000101mmmmdddd "mov.w @(disp,Rm),r0"
@@ -2038,7 +1883,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = R0;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.w @(%d,r%d),r0", 2*d,m);
 	}
 
 	// 0110nnnnmmmm0101 "mov.w @Rm+,Rn"
@@ -2053,7 +1897,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.w @r%d+,r%d", m, n);
 	}
 
 	// 0110nnnnmmmm0001 "mov.w @Rm,Rn"
@@ -2067,7 +1910,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.w @r%d,r%d", m, n);
 	}
 
 	// 11000001dddddddd "mov.w r0,@(disp,gbr)"
@@ -2081,7 +1923,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = GBR;
 		instr->operands[1].displacement = 2*d;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.w r0,@(%d,gbr)", 2*d);
 	}
 
 	// 10000001nnnndddd "mov.w r0,@(disp,Rn)"
@@ -2096,7 +1937,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands[1].displacement = 2*d;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.w r0,@(%d,r%d)", 2*d, n);
 	}
 
 	// 0000nnnnmmmm0101 "mov.w Rm,@(r0,Rn)"
@@ -2111,7 +1951,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = R0;
 		instr->operands[1].regB = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.w r%d,@(r0,r%d)", m, n);
 	}
 
 	// 0010nnnnmmmm0101 "mov.w Rm,@-Rn"
@@ -2126,7 +1965,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.w r%d,@-r%d", m, n);
 	}
 
 	// 0010nnnnmmmm0001 "mov.w Rm,@Rn"
@@ -2140,7 +1978,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mov.w r%d,@r%d", m, n);
 	}
 
 	// 11000111dddddddd "mova @(disp,PC),r0"
@@ -2153,7 +1990,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = R0;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mova 0x%016llx,r0", d);
 	}
 
 	// 0000nnnn11000011 "movca.l r0,@Rn"
@@ -2166,7 +2002,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "movca.l r0,@r%d", n);
 	}
 
 	// 0000nnnn00101001 "movt Rn"
@@ -2176,7 +2011,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "movt r%d", n);
 	}
 
 	// 0000nnnnmmmm0111 "mul.l Rm,Rn"
@@ -2190,7 +2024,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mul.l r%d,r%d", m, n);
 	}
 
 	// 0010nnnnmmmm1111 "muls.w Rm,Rn"
@@ -2204,7 +2037,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "muls.w r%d,r%d", m, n);
 	}
 
 	// 0010nnnnmmmm1110 "mulu.w Rm,Rn"
@@ -2218,7 +2050,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "mulu.w r%d,r%d", m, n);
 	}
 
 	// 0110nnnnmmmm1011 "neg Rm,Rn"
@@ -2231,7 +2062,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "neg r%d,r%d", m, n);
 	}
 
 	// 0110nnnnmmmm1010 "negc Rm,Rn"
@@ -2244,14 +2074,12 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "negc r%d,r%d", m, n);
 	}
 
 	// 0000000000001001 "nop"
 	else if(insword == 0x9) {
 		instr->opcode = OPC_NOP;
 		instr->operands_n = 0;
-		//sprintf(instr->string, "nop");
 	}
 
 	// 0110nnnnmmmm0111 "not Rm,Rn"
@@ -2264,7 +2092,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "not r%d,r%d", m, n);
 	}
 
 	// 0000nnnn10010011 "ocbi @Rn"
@@ -2274,7 +2101,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = DEREF_REG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "ocbi @r%d", n);
 	}
 
 	// 0000nnnn10100011 "ocbp @Rn"
@@ -2284,7 +2110,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = DEREF_REG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "ocbp @r%d", n);
 	}
 
 	// 0000nnnn10110011 "ocbwb @Rn"
@@ -2294,7 +2119,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = DEREF_REG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "ocbwb @r%d", n);
 	}
 
 	// 11001011iiiiiiii "or #imm,r0"
@@ -2306,7 +2130,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = R0;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "or #%d,r0", i);
 	}
 
 	// 0010nnnnmmmm1011 "or Rm,Rn"
@@ -2319,7 +2142,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "or r%d,r%d", m, n);
 	}
 
 	// 11001111iiiiiiii "or.b #imm,@(r0,gbr)"
@@ -2333,7 +2155,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = R0;
 		instr->operands[1].regB = GBR;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "or.b #%d,@(r0,gbr)", i);
 	}
 
 	// 0000nnnn10000011 "pref @Rn"
@@ -2343,7 +2164,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = DEREF_REG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "pref @r%d", n);
 	}
 
 	// 0100nnnn00100100 "rotcl Rn"
@@ -2353,7 +2173,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "rotcl r%d", n);
 	}
 
 	// 0100nnnn00100101 "rotcr Rn"
@@ -2363,7 +2182,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "rotcr r%d", n);
 	}
 
 	// 0100nnnn00000100 "rotl Rn"
@@ -2373,7 +2191,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "rotl r%d", n);
 	}
 
 	// 0100nnnn00000101 "rotr Rn"
@@ -2383,35 +2200,30 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "rotr r%d", n);
 	}
 
 	// 0000000000101011 "rte"
 	else if(insword == 0x2b) {
 		instr->opcode = OPC_RTE;
 		instr->operands_n = 0;
-		//sprintf(instr->string, "rte");
 	}
 
 	// 0000000000001011 "rts"
 	else if(insword == 0xb) {
 		instr->opcode = OPC_RTS;
 		instr->operands_n = 0;
-		//sprintf(instr->string, "rts");
 	}
 
 	// 0000000000011000 "sett"
 	else if(insword == 0x18) {
 		instr->opcode = OPC_SETT;
 		instr->operands_n = 0;
-		//sprintf(instr->string, "sett");
 	}
 
 	// 0000000001011000 "sett"
 	else if(insword == 0x58) {
 		instr->opcode = OPC_SETS;
 		instr->operands_n = 0;
-		//sprintf(instr->string, "sets");
 	}
 
 	// 0100nnnnmmmm1100 "shad Rm,Rn"
@@ -2424,7 +2236,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "shad r%d,r%d", m, n);
 	}
 
 	// 0100nnnn00100000 "shal Rn"
@@ -2434,7 +2245,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "shal r%d", n);
 	}
 
 	// 0100nnnn00100001 "shar Rn"
@@ -2444,7 +2254,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "shar r%d", n);
 	}
 
 	// 0100nnnnmmmm1101 "shld Rm,Rn"
@@ -2457,7 +2266,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "shld r%d,r%d", m, n);
 	}
 
 	// 0100nnnn00000000 "shll Rn"
@@ -2467,7 +2275,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "shll r%d", n);
 	}
 
 	// 0100nnnn00101000 "shll16 Rn"
@@ -2477,7 +2284,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "shll16 r%d", n);
 	}
 
 	// 0100nnnn00001000 "shll2 Rn"
@@ -2487,7 +2293,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "shll2 r%d", n);
 	}
 
 	// 0100nnnn00011000 "shll8 Rn"
@@ -2497,7 +2302,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "shll8 r%d", n);
 	}
 
 	// 0100nnnn00000001 "shlr Rn"
@@ -2507,7 +2311,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "shlr r%d", n);
 	}
 
 	// 0100nnnn00101001 "shlr16 Rn"
@@ -2517,7 +2320,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "shlr16 r%d", n);
 	}
 
 	// 0100nnnn00001001 "shlr2 Rn"
@@ -2527,7 +2329,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "shlr2 r%d", n);
 	}
 
 	// 0100nnnn00011001 "shlr8 Rn"
@@ -2537,14 +2338,12 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = GPREG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "shlr8 r%d", n);
 	}
 
 	// 0000000000011011 "sleep"
 	else if(insword == 0x1b) {
 		instr->opcode = OPC_SLEEP;
 		instr->operands_n = 0;
-		//sprintf(instr->string, "sleep");
 	}
 
 	// 0000nnnn1mmm0010 "stc Rn,Rm_bank"
@@ -2557,7 +2356,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc r%d_bank,r%d", m, n);
 	}
 
 	// 0000nnnn11111010 "stc dbr,Rn"
@@ -2569,7 +2367,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc dbr,r%d", n);
 	}
 
 	// 0000nnnn00010010 "stc gbr,Rn"
@@ -2581,7 +2378,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc gbr,r%d", n);
 	}
 
 	// 0000nnnn00111010 "stc sgr,Rn"
@@ -2593,7 +2389,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc sgr,r%d", n);
 	}
 
 	// 0000nnnn01000010 "stc spc,Rn"
@@ -2605,7 +2400,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc spc,r%d", n);
 	}
 
 	// 0000nnnn00000010 "stc sr,Rn"
@@ -2617,7 +2411,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc sr,r%d", n);
 	}
 
 	// 0000nnnn00110010 "stc ssr,Rn"
@@ -2629,7 +2422,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc ssr,r%d", n);
 	}
 
 	// 0000nnnn00100010 "stc vbr,Rn"
@@ -2641,7 +2433,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc vbr,r%d", n);
 	}
 
 	// MANUAL
@@ -2655,7 +2446,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc r%d_bank,r%d", m, n);
 	}
 
 	// MANUAL
@@ -2670,16 +2460,14 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 			instr->operands[0].regA = (SH4_REGISTER)(R0_BANK0 + n);
 			instr->operands[1].type = GPREG;
 			instr->operands[1].regA = (SH4_REGISTER)(R0 + cr2id[m]);
-			//sprintf(instr->string, "stc %s,r%d", cr2str[m], n);
-		}
+			}
 		else {
 			instr->opcode = OPC_STC;
 			instr->operands[0].type = BANKREG;
 			instr->operands[0].regA = (SH4_REGISTER)(R0_BANK0 + m);
 			instr->operands[1].type = GPREG;
 			instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
-			//sprintf(instr->string, "stc r%d_bank,r%d", m, n);
-		}
+			}
 	}
 
 	// 0100nnnn11110010 "stc.l dbr,@-Rn"
@@ -2693,7 +2481,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc.l dbr,@-r%d", n);
 	}
 
 	// 0100nnnn00010011 "stc.l gbr,@-Rn"
@@ -2707,7 +2494,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc.l gbr,@-r%d", n);
 	}
 
 	// 0100nnnn1mmm0011 "stc.l Rm_bank,@-Rn"
@@ -2722,7 +2508,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc.l r%d_bank,@-r%d", m, n);
 	}
 
 	// MANUAL
@@ -2739,8 +2524,7 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 			instr->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
 			instr->operands[1].type = DEREF_REG;
 			instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
-			//sprintf(instr->string, "stc.l %s,@-r%d", cr2str[m], n);
-		}
+			}
 		else {
 			instr->opcode = OPC_STC;
 			instr->length_suffix = LEN_SUFFIX_L;
@@ -2749,8 +2533,7 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 			instr->operands[1].flags |= SH4_FLAG_PRE_DECREMENT;
 			instr->operands[1].type = DEREF_REG;
 			instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
-			//sprintf(instr->string, "stc.l r%d_bank,@-r%d", m, n);
-		}
+			}
 	}
 
 	// 0100nnnn00110010 "stc.l sgr,@-Rn"
@@ -2764,7 +2547,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc.l sgr,@-r%d", n);
 	}
 
 	// 0100nnnn01000011 "stc.l spc,@-Rn"
@@ -2778,7 +2560,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc.l spc,@-r%d", n);
 	}
 
 	// 0100nnnn00000011 "stc.l sr,@-Rn"
@@ -2792,7 +2573,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc.l sr,@-r%d", n);
 	}
 
 	// 0100nnnn00110011 "stc.l ssr,@-Rn"
@@ -2806,7 +2586,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc.l ssr,@-r%d", n);
 	}
 
 	// 0100nnnn00100011 "stc.l vbr,@-Rn"
@@ -2820,7 +2599,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "stc.l vbr,@-r%d", n);
 	}
 
 	// 0000nnnn01101010 "sts fpscr,Rn"
@@ -2832,7 +2610,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "sts fpscr,r%d", n);
 	}
 
 	// 0000nnnn01011010 "sts fpul,Rn"
@@ -2844,7 +2621,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "sts fpul,r%d", n);
 	}
 
 	// 0000nnnn00001010 "sts mach,Rn"
@@ -2856,7 +2632,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "sts mach,r%d", n);
 	}
 
 	// 0000nnnn00011010 "sts macl,Rn"
@@ -2868,7 +2643,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "sts macl,r%d", n);
 	}
 
 	// 0000nnnn00101010 "sts pr,Rn"
@@ -2880,7 +2654,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "sts pr,r%d", n);
 	}
 
 	// 0100nnnn01100010 "sts.l fpscr,@-Rn"
@@ -2894,7 +2667,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "sts.l fpscr,@-r%d", n);
 	}
 
 	// 0100nnnn01010010 "sts.l fpul,@-Rn"
@@ -2908,7 +2680,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "sts.l fpul,@-r%d", n);
 	}
 
 	// 0100nnnn00000010 "sts.l mach,@-Rn"
@@ -2922,7 +2693,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "sts.l mach,@-r%d", n);
 	}
 
 	// 0100nnnn00010010 "sts.l macl,@-Rn"
@@ -2936,7 +2706,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "sts.l macl,@-r%d", n);
 	}
 
 	// 0100nnnn00100010 "sts.l pr,@-Rn"
@@ -2950,7 +2719,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = DEREF_REG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "sts.l pr,@-r%d", n);
 	}
 
 	// 0011nnnnmmmm1000 "sub Rm,Rn"
@@ -2963,7 +2731,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "sub r%d,r%d", m, n);
 	}
 
 	// 0011nnnnmmmm1010 "subc Rm,Rn"
@@ -2976,7 +2743,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "subc r%d,r%d", m, n);
 	}
 
 	// 0011nnnnmmmm1011 "subv Rm,Rn"
@@ -2989,7 +2755,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "subv r%d,r%d", m, n);
 	}
 
 	// 0110nnnnmmmm1000 "swap.b Rm,Rn"
@@ -3003,7 +2768,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "swap.b r%d,r%d", m, n);
 	}
 
 	// 0110nnnnmmmm1001 "swap.w Rm,Rn"
@@ -3017,7 +2781,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "swap.w r%d,r%d", m, n);
 	}
 
 	// 0100nnnn00011011 "tas.b @Rn"
@@ -3028,7 +2791,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = DEREF_REG;
 		instr->operands[0].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "tas.b @r%d", n);
 	}
 
 	// 11000011iiiiiiii "trapa #imm"
@@ -3038,7 +2800,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = IMMEDIATE;
 		instr->operands[0].immediate = i;
 		instr->operands_n = 1;
-		//sprintf(instr->string, "trapa #%d", i);
 	}
 
 	// 11001000iiiiiiii "tst #imm,r0"
@@ -3050,7 +2811,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = R0;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "tst #%d,r0", i);
 	}
 
 	// 0010nnnnmmmm1000 "tst Rm,Rn"
@@ -3063,7 +2823,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "tst r%d,r%d", m, n);
 	}
 
 	// 11001100iiiiiiii "tst.b #imm,@(r0,gbr)"
@@ -3077,7 +2836,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = R0;
 		instr->operands[1].regB = GBR;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "tst.b #%d,@(r0,gbr)", i);
 	}
 
 	// 11001010iiiiiiii "xor #imm,r0"
@@ -3089,7 +2847,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = R0;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "xor #%d,r0", i);
 	}
 
 	// 0010nnnnmmmm1010 "xor Rm,Rn"
@@ -3102,7 +2859,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "xor r%d,r%d", m, n);
 	}
 
 	// 11001110iiiiiiii "xor.b #imm,@(r0,gbr)"
@@ -3116,7 +2872,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].regA = R0;
 		instr->operands[1].regB = GBR;
 		instr->operands_n = 2;
-		//sprintf(instr->string, "xor.b #%d,@(r0,gbr)", i);
 	}
 
 	// 0010nnnnmmmm1101 "xtrct Rm,Rn"
@@ -3129,7 +2884,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = GPREG;
 		instr->operands[1].regA = (SH4_REGISTER)(R0 + n);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "xtrct r%d,r%d", m, n);
 	}
 
 	// 1111nnnn01111101 "fsrra Rn"
@@ -3139,7 +2893,6 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[0].type = FPUREG;
 		instr->operands[0].regA = (SH4_REGISTER)(FR0 + m);
 		instr->operands_n = 1;
-		//sprintf(instr->string, "fsrra fr%d", m);
 	}
 
 	// 1111nnn011111101 "fsca fpul, drn"
@@ -3151,14 +2904,12 @@ int sh4_decompose(uint16_t insword, struct Instruction *instr, uint64_t addr)
 		instr->operands[1].type = FPUREG;
 		instr->operands[1].regA = (SH4_REGISTER)(DR0 + 2*m);
 		instr->operands_n = 2;
-		//sprintf(instr->string, "fsca fpul,dr%d", 2*m);
 	}
 
 	// didn't disassemble!
 	else {
 		instr->opcode = OPC_ERROR;
 		instr->operands_n = 0;
-		//sprintf(instr->string, "error");
 		rc = -1;
 	}
 

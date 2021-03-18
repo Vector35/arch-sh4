@@ -175,9 +175,6 @@ struct Instruction
 	/* operands */
 	int operands_n;
 	struct disasm_operand operands[3];
-
-	/* string production */
-	char string[32];
 };
 
 #ifndef __cplusplus
