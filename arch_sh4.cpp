@@ -6,8 +6,11 @@ using namespace BinaryNinja; // for ::LogDebug, etc.
 using namespace std;
 
 //#define printf(...) while(0);
+
+extern "C" {
 #include "decode.h"
 #include "format.h"
+}
 
 /*****************************************************************************/
 /* the architecture class */
@@ -86,34 +89,34 @@ class SH4Architecture: public Architecture
 		uint16_t insword = *(uint16_t *)data;
 		if(endian == BigEndian)
 			insword = (data[0]<<8) | data[1];
-		if(sh4_decompose(insword, &instr, addr) != 0)
+		if(superh_decompose(insword, &instr, addr) != 0)
 			return false;
 
-		switch(instr.opcode) {
-			case OPC_BSR:
-			case OPC_BSRF:
-			case OPC_JSR:
+		switch(instr.operation) {
+			case SUPERH_BSR:
+			case SUPERH_BSRF:
+			case SUPERH_JSR:
 				if(instr.operands_n == 1)
 					result.AddBranch(CallDestination, instr.operands[0].address);
 				else
 					result.AddBranch(UnresolvedBranch);
 				break;
 
-			case OPC_BRA:
-			case OPC_JMP:
+			case SUPERH_BRA:
+			case SUPERH_JMP:
 				if(instr.operands_n == 1)
 					result.AddBranch(UnconditionalBranch, instr.operands[0].address);
 				else
 					result.AddBranch(UnresolvedBranch);
 				break;
 
-			case OPC_BT:
-			case OPC_BF:
+			case SUPERH_BT:
+			case SUPERH_BF:
 				//result.AddBranch(TrueBranch, instr.operands[0].address);
 				//result.AddBranch(FalseBranch, addr+2);
 				break;
 
-			case OPC_RTS:
+			case SUPERH_RTS:
 				result.AddBranch(FunctionReturn);
 				break;
 
@@ -138,13 +141,11 @@ class SH4Architecture: public Architecture
 		uint16_t insword = *(uint16_t *)data;
 		if(endian == BigEndian)
 			insword = (data[0]<<8) | data[1];
-		if(sh4_decompose(insword, &instr, addr) != 0)
-			return false;
-		if(!(instr.opcode > OPC_NONE && instr.opcode < OPC_MAXIMUM))
+		if(superh_decompose(insword, &instr, addr) != 0)
 			return false;
 
 		/* opcode */
-		strcpy(buf, sh4_opc_strs[instr.opcode]);
+		strcpy(buf, operation_to_str(instr.operation));
 		/* size modifier suffixes {.b, .w, .l} */
 		if(instr.length_suffix == LEN_SUFFIX_B)
 			strcat(buf, ".b");
@@ -156,10 +157,10 @@ class SH4Architecture: public Architecture
 		if(instr.delay_slot)
 			strcat(buf, ".s");
 		/* conditional "/xxx" if this is a cmp */
-		if(instr.opcode == OPC_CMP || instr.opcode == OPC_FCMP) {
+		if(instr.operation == SUPERH_CMP || instr.operation == SUPERH_FCMP) {
 			if(instr.cond > CMP_COND_NONE && instr.cond < CMP_COND_MAXIMUM) {
 				strcat(buf, "/");
-				strcat(buf, sh4_cmp_cond_strs[instr.cond]);
+				strcat(buf, superh_cmp_cond_strs[instr.cond]);
 			}
 		}
 		/* done */
@@ -178,7 +179,7 @@ class SH4Architecture: public Architecture
 				case CTRLREG:
 				case SYSREG:
 				case FPUREG:
-					result.emplace_back(RegisterToken, sh4_reg_strs[instr.operands[i].regA]);
+					result.emplace_back(RegisterToken, superh_reg_strs[instr.operands[i].regA]);
 					break;
 
 				case IMMEDIATE:
@@ -195,24 +196,24 @@ class SH4Architecture: public Architecture
 				case DEREF_REG:
 					result.emplace_back(BeginMemoryOperandToken, "@");
 
-					if(instr.operands[i].flags & SH4_FLAG_PRE_INCREMENT)
+					if(instr.operands[i].flags & SUPERH_FLAG_PRE_INCREMENT)
 						result.emplace_back(TextToken, "+");
-					if(instr.operands[i].flags & SH4_FLAG_PRE_DECREMENT)
+					if(instr.operands[i].flags & SUPERH_FLAG_PRE_DECREMENT)
 						result.emplace_back(TextToken, "-");
 
-					result.emplace_back(RegisterToken, sh4_reg_strs[instr.operands[i].regA]);
+					result.emplace_back(RegisterToken, superh_reg_strs[instr.operands[i].regA]);
 
-					if(instr.operands[i].flags & SH4_FLAG_POST_INCREMENT)
+					if(instr.operands[i].flags & SUPERH_FLAG_POST_INCREMENT)
 						result.emplace_back(TextToken, "+");
-					if(instr.operands[i].flags & SH4_FLAG_POST_DECREMENT)
+					if(instr.operands[i].flags & SUPERH_FLAG_POST_DECREMENT)
 						result.emplace_back(TextToken, "-");
 					break;
 
 				case DEREF_REG_REG:
 					result.emplace_back(BeginMemoryOperandToken, "@(");
-					result.emplace_back(RegisterToken, sh4_reg_strs[instr.operands[i].regA]);
+					result.emplace_back(RegisterToken, superh_reg_strs[instr.operands[i].regA]);
 					result.emplace_back(OperandSeparatorToken, ",");
-					result.emplace_back(RegisterToken, sh4_reg_strs[instr.operands[i].regB]);
+					result.emplace_back(RegisterToken, superh_reg_strs[instr.operands[i].regB]);
 					result.emplace_back(EndMemoryOperandToken, ")");
 					break;
 
@@ -221,7 +222,7 @@ class SH4Architecture: public Architecture
 					sprintf(buf, "%d", instr.operands[i].displacement);
 					result.emplace_back(IntegerToken, buf);
 					result.emplace_back(OperandSeparatorToken, ",");
-					result.emplace_back(RegisterToken, sh4_reg_strs[instr.operands[i].regA]);
+					result.emplace_back(RegisterToken, superh_reg_strs[instr.operands[i].regA]);
 					result.emplace_back(EndMemoryOperandToken, ")");
 					break;
 
@@ -247,28 +248,28 @@ class SH4Architecture: public Architecture
 		uint16_t insword = *(uint16_t *)data;
 		if(endian == BigEndian)
 			insword = (data[0]<<8) | data[1];
-		if(sh4_decompose(insword, &instr, addr) != 0) {
+		if(superh_decompose(insword, &instr, addr) != 0) {
 			return false;
 		}
-		if(!(instr.opcode > OPC_NONE && instr.opcode < OPC_MAXIMUM)) {
+		if(!(instr.operation > SUPERH_ERROR && instr.operation <= SUPERH_XTRCT)) {
 			return false;
 		}
-		switch(instr.opcode) {
+		switch(instr.operation) {
 
 			/* there are 3 "call subroutine" instructions in SH4 */
 			/* (1/3) JumpSubRoutine <reg> */
 			/* eg: 0B 41    jsr @r1 */
-			case OPC_JSR:
+			case SUPERH_JSR:
 				il.AddInstruction(il.Call(il.Register(4, instr.operands[0].regA)));
 				break;
 
 			/* (2/3) branch subroutine, PC = (PC+4) + 2*disp */
-			case OPC_BSR:
+			case SUPERH_BSR:
 				il.AddInstruction(il.Call(il.ConstPointer(4, instr.operands[0].address)));
 				break;
 
 			/* (3/3) branch subroutine far, PC = (PC+4) + Rn */
-			case OPC_BSRF:
+			case SUPERH_BSRF:
 				il.AddInstruction(il.Call(
 					il.Add(4,
 						il.Add(4, il.Register(4, PC), il.Const(4, 4)),
@@ -277,11 +278,11 @@ class SH4Architecture: public Architecture
 				));
 				break;
 
-			case OPC_JMP:
+			case SUPERH_JMP:
 				il.AddInstruction(il.Jump(il.Register(4, instr.operands[0].regA)));
 				break;
 
-			case OPC_MOV:
+			case SUPERH_MOV:
 				/* eg: 00 EE    mov #0, r14 */
 				if(instr.operands_n == 2 && instr.operands[0].type == IMMEDIATE && instr.operands[1].type == GPREG)
 					il.AddInstruction(il.SetRegister(4,
@@ -301,7 +302,7 @@ class SH4Architecture: public Architecture
 				break;
 
 			/* return subroutine */
-			case OPC_RTS:
+			case SUPERH_RTS:
 				il.AddInstruction(il.Return(il.Register(4, PR)));
 				break;
 
@@ -323,8 +324,8 @@ class SH4Architecture: public Architecture
 	virtual string GetRegisterName(uint32_t regId) override
 	{
 		//printf("%s()\n", __func__);
-		if(regId > SH4_REGISTER_NONE && regId < SH4_REGISTER_MAXIMUM)
-			return sh4_reg_strs[regId];
+		if(regId > SUPERH_REGISTER_NONE && regId < SUPERH_REGISTER_MAXIMUM)
+			return superh_reg_strs[regId];
 
 		return "unknown";
 	}
@@ -383,7 +384,7 @@ class SH4Architecture: public Architecture
 	virtual vector<uint32_t> GetAllRegisters() override
 	{
 		vector<uint32_t> result = {0};
-		for(int i=1; i<(int)SH4_REGISTER_MAXIMUM; i++)
+		for(int i=1; i<(int)SUPERH_REGISTER_MAXIMUM; i++)
 			result.push_back(i);
 		return result;
 	}

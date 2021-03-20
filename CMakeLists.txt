@@ -17,7 +17,10 @@ file(GLOB SOURCES
 	*.c
 	*.h
 	disassembler/decode.c
+	disassembler/decode_spec.c
+	disassembler/decode_support.c
 	disassembler/format.c
+	disassembler/operations.c
 	disassembler/*.h)
 
 if(DEMO)

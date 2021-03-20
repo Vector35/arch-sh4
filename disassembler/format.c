@@ -4,26 +4,9 @@
 #include "decode.h"
 #include "format.h"
 
-const char *sh4_opc_strs[] = {
-	"<error>",
-	"add", "addc", "addv", "and", "bf", "bra", "braf", "bsr", ""
-	"bsrf", "bt", "clrmac", "clrs", "clrt", "cmp", "div0s", ""
-	"div0u", "div1", "dmuls", "dmulu", "dt", "error", "exts", ""
-	"extu", "fabs", "fadd", "fcmp", "fcnvds", "fcnvsd", "fdiv", ""
-	"fipr", "fldi0", "fldi1", "flds", "float", "fmac", "fmov", ""
-	"fmul", "fneg", "frchg", "fsca", "fschg", "fsqrt", "fsrra", ""
-	"fsts", "fsub", "ftrc", "ftrv", "jmp", "jsr", "ldc", "lds", ""
-	"ldtlb", "mac", "mov", "mova", "movca", "movt", "mul", "muls", ""
-	"mulu", "neg", "negc", "nop", "not", "ocbi", "ocbp", "ocbwb", ""
-	"or", "pref", "rotcl", "rotcr", "rotl", "rotr", "rte", "rts", ""
-	"sets", "sett", "shad", "shal", "shar", "shld", "shll", ""
-	"shll16", "shll2", "shll8", "shlr", "shlr16", "shlr2", "shlr8", ""
-	"sleep", "stc", "sts", "sub", "subc", "subv", "swap", "tas", ""
-	"trapa", "tst", "xor", "xtrct"
-};
-
-const char *sh4_reg_strs[] = {
-	"<error>",
+// in parallel with enum SUPERH_REGISTER
+const char *superh_reg_strs[] = {
+	"error",
 	/* "gpr"'"s" */
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
 	/* "banks" */
@@ -51,20 +34,20 @@ const char *sh4_reg_strs[] = {
 	"xmtrx",
 };
 
-const char *sh4_cmp_cond_strs[] = {
-	"<error>",
+const char *superh_cmp_cond_strs[] = {
+	"error",
 	"eq", "ge", "gt", "hi", "hs", "pl", "pz", "str"
 };
 
-const char *sh4_len_suffix_strs[] = { "", ".b", ".w", ".l" };
+const char *superh_len_suffix_strs[] = { "", ".b", ".w", ".l" };
 
-int sh4_disassemble(Instruction *instr, char *result, size_t buf_sz)
+int superh_disassemble(Instruction *instr, char *result, size_t buf_sz)
 {
 	/* default answer */
 	result[0] = '\0';
 
 	/* mnemonic */
-	strcpy(result, sh4_opc_strs[instr->opcode]);
+	strcpy(result, operation_to_str(instr->operation));
 	/* size modifier suffixes {.b, .w, .l} */
 	if(instr->length_suffix == LEN_SUFFIX_B)
 		strcat(result, ".b");
@@ -72,14 +55,14 @@ int sh4_disassemble(Instruction *instr, char *result, size_t buf_sz)
 		strcat(result, ".w");
 	if(instr->length_suffix == LEN_SUFFIX_L)
 		strcat(result, ".l");
-	/* delay slot suffix .s or /s from doc */
-	if(instr->delay_slot)
+	/* delay slot suffix .s (/s from doc) */
+	if(instr->delay_slot && (instr->operation==SUPERH_BT || instr->operation==SUPERH_BF))
 		strcat(result, ".s");
 	/* conditional "/xxx" if this is a cmp */
-	if(instr->opcode == OPC_CMP || instr->opcode == OPC_FCMP) {
+	if(instr->operation == SUPERH_CMP || instr->operation == SUPERH_FCMP) {
 		if(instr->cond > CMP_COND_NONE && instr->cond < CMP_COND_MAXIMUM) {
 			strcat(result, "/");
-			strcat(result, sh4_cmp_cond_strs[instr->cond]);
+			strcat(result, superh_cmp_cond_strs[instr->cond]);
 		}
 	}
 
@@ -96,7 +79,7 @@ int sh4_disassemble(Instruction *instr, char *result, size_t buf_sz)
 			case CTRLREG:
 			case SYSREG:
 			case FPUREG:
-				strcat(result, sh4_reg_strs[instr->operands[i].regA]);
+				strcat(result, superh_reg_strs[instr->operands[i].regA]);
 				break;
 			case IMMEDIATE:
 				sprintf(buf, "#%d", instr->operands[i].immediate);
@@ -108,18 +91,18 @@ int sh4_disassemble(Instruction *instr, char *result, size_t buf_sz)
 				break;
 			case DEREF_REG:
 				strcat(result, "@");
-				if(instr->operands[i].flags & SH4_FLAG_PRE_INCREMENT) strcat(result, "+");
-				if(instr->operands[i].flags & SH4_FLAG_PRE_DECREMENT) strcat(result, "-");
-				strcat(result, sh4_reg_strs[instr->operands[i].regA]);
-				if(instr->operands[i].flags & SH4_FLAG_POST_INCREMENT) strcat(result, "+");
-				if(instr->operands[i].flags & SH4_FLAG_POST_DECREMENT) strcat(result, "-");
+				if(instr->operands[i].flags & SUPERH_FLAG_PRE_INCREMENT) strcat(result, "+");
+				if(instr->operands[i].flags & SUPERH_FLAG_PRE_DECREMENT) strcat(result, "-");
+				strcat(result, superh_reg_strs[instr->operands[i].regA]);
+				if(instr->operands[i].flags & SUPERH_FLAG_POST_INCREMENT) strcat(result, "+");
+				if(instr->operands[i].flags & SUPERH_FLAG_POST_DECREMENT) strcat(result, "-");
 				break;
 			case DEREF_REG_REG:
-				sprintf(buf, "@(%s,%s)", sh4_reg_strs[instr->operands[i].regA], sh4_reg_strs[instr->operands[i].regB]);
+				sprintf(buf, "@(%s,%s)", superh_reg_strs[instr->operands[i].regA], superh_reg_strs[instr->operands[i].regB]);
 				strcat(result, buf);
 				break;
 			case DEREF_REG_IMM:
-				sprintf(buf, "@(%d,%s)", instr->operands[i].displacement, sh4_reg_strs[instr->operands[i].regA]);
+				sprintf(buf, "@(%d,%s)", instr->operands[i].displacement, superh_reg_strs[instr->operands[i].regA]);
 				strcat(result, buf);
 				break;
 			default:
