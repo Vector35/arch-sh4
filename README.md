@@ -1,6 +1,6 @@
 # arch-sh4
 
-This is the SH4 plugin that ships with Binary Ninja.
+This is an experimental SH4 architecture plugin for Binary Ninja.
 
 ## What's What
 
