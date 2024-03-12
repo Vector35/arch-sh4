@@ -12,6 +12,8 @@ extern "C" {
 #include "format.h"
 }
 
+#define IL_FLAG_T 1
+
 /*****************************************************************************/
 /* the architecture class */
 /*****************************************************************************/
@@ -83,7 +85,7 @@ class SH4Architecture: public Architecture
 	virtual bool GetInstructionInfo(const uint8_t* data, uint64_t addr,
 		size_t maxLen, InstructionInfo& result) override
 	{
-		char tmp[32];
+		// char tmp[32];
 		Instruction instr;
 		memset(&instr, 0, sizeof(instr));
 		uint16_t insword = *(uint16_t *)data;
@@ -92,32 +94,38 @@ class SH4Architecture: public Architecture
 		if(superh_decompose(insword, &instr, addr) != 0)
 			return false;
 
+		// result.branchDelay = instr.delay_slot;
+
 		switch(instr.operation) {
 			case SUPERH_BSR:
 			case SUPERH_BSRF:
 			case SUPERH_JSR:
 				if(instr.operands_n == 1)
-					result.AddBranch(CallDestination, instr.operands[0].address);
+					result.AddBranch(CallDestination, instr.operands[0].address, nullptr, instr.delay_slot);
 				else
-					result.AddBranch(UnresolvedBranch);
+					result.AddBranch(UnresolvedBranch, 0, nullptr, instr.delay_slot);
 				break;
 
 			case SUPERH_BRA:
 			case SUPERH_JMP:
 				if(instr.operands_n == 1)
-					result.AddBranch(UnconditionalBranch, instr.operands[0].address);
+					result.AddBranch(UnconditionalBranch, instr.operands[0].address, nullptr, instr.delay_slot);
 				else
-					result.AddBranch(UnresolvedBranch);
+					result.AddBranch(UnresolvedBranch, 0, nullptr, instr.delay_slot);
 				break;
 
 			case SUPERH_BT:
 			case SUPERH_BF:
-				//result.AddBranch(TrueBranch, instr.operands[0].address);
-				//result.AddBranch(FalseBranch, addr+2);
+				result.AddBranch(TrueBranch, instr.operands[0].address, nullptr, instr.delay_slot);
+				// result.AddBranch(FalseBranch, addr+2, nullptr, instr.delay_slot);
+				if (instr.delay_slot)
+					result.AddBranch(FalseBranch, addr+4, nullptr, instr.delay_slot);
+				else
+					result.AddBranch(FalseBranch, addr+2, nullptr, instr.delay_slot);
 				break;
 
 			case SUPERH_RTS:
-				result.AddBranch(FunctionReturn);
+				result.AddBranch(FunctionReturn, 0, nullptr, instr.delay_slot);
 				break;
 
 			default:
@@ -184,12 +192,12 @@ class SH4Architecture: public Architecture
 
 				case IMMEDIATE:
 					result.emplace_back(TextToken, "#");
-					sprintf(buf, "%d", instr.operands[i].immediate);
+					snprintf(buf, sizeof(buf), "%d", instr.operands[i].immediate);
 					result.emplace_back(IntegerToken, buf);
 					break;
 
 				case ADDRESS:
-					sprintf(buf, "0x%016llx", instr.operands[i].address);
+					snprintf(buf, sizeof(buf), "0x%016llx", instr.operands[i].address);
 					result.emplace_back(PossibleAddressToken, buf);
 					break;
 
@@ -219,7 +227,7 @@ class SH4Architecture: public Architecture
 
 				case DEREF_REG_IMM:
 					result.emplace_back(BeginMemoryOperandToken, "@(");
-					sprintf(buf, "%d", instr.operands[i].displacement);
+					snprintf(buf, sizeof(buf), "%d", instr.operands[i].displacement);
 					result.emplace_back(IntegerToken, buf);
 					result.emplace_back(OperandSeparatorToken, ",");
 					result.emplace_back(RegisterToken, superh_reg_strs[instr.operands[i].regA]);
@@ -282,6 +290,32 @@ class SH4Architecture: public Architecture
 				il.AddInstruction(il.Jump(il.Register(4, instr.operands[0].regA)));
 				break;
 
+			case SUPERH_BT:
+			{
+				LowLevelILLabel trueLabel, doneLabel;
+				il.AddInstruction(
+					il.If(
+						il.TestBit(1, il.Register(4, SR), il.Const(1, 0)),
+						trueLabel, doneLabel));
+				il.MarkLabel(trueLabel);
+				il.Jump(il.ConstPointer(4, instr.operands[0].address));
+				il.MarkLabel(doneLabel);
+				break;
+			}
+
+			case SUPERH_BF:
+			{
+				LowLevelILLabel falseLabel, doneLabel;
+				il.AddInstruction(
+					il.If(
+						il.Not(1, il.TestBit(1, il.Register(4, SR), il.Const(1, 0))),
+						falseLabel, doneLabel));
+				il.MarkLabel(falseLabel);
+				il.Jump(il.ConstPointer(4, instr.operands[0].address));
+				il.MarkLabel(doneLabel);
+				break;
+			}
+
 			case SUPERH_MOV:
 				/* eg: 00 EE    mov #0, r14 */
 				if(instr.operands_n == 2 && instr.operands[0].type == IMMEDIATE && instr.operands[1].type == GPREG)
@@ -297,7 +331,14 @@ class SH4Architecture: public Architecture
 						il.Load(4, il.ConstPointer(4, instr.operands[0].address))
 					));
 				else
-					il.AddInstruction(il.Nop());
+				/* eg: 53 60   mov r5,r0 */
+				if(instr.operands_n == 2 && instr.operands[0].type == GPREG && instr.operands[1].type == GPREG)
+					il.AddInstruction(il.SetRegister(4,
+						instr.operands[1].regA,
+						il.Register(4, instr.operands[0].regA)
+					));
+				else
+					il.AddInstruction(il.Unimplemented());
 
 				break;
 
@@ -306,8 +347,119 @@ class SH4Architecture: public Architecture
 				il.AddInstruction(il.Return(il.Register(4, PR)));
 				break;
 
+			case SUPERH_ADD:
+				if(instr.operands_n == 2 && instr.operands[0].type == IMMEDIATE && instr.operands[1].type == GPREG)
+					il.AddInstruction(il.SetRegister(4,
+						instr.operands[1].regA,
+						il.Add(4, 
+							il.Register(4, instr.operands[1].regA),
+							il.SignExtend(4,
+								il.Const(1, instr.operands[0].immediate)))
+						// il.SignExtend(4,
+						// 	il.Add(4, il.Register(4, instr.operands[1].regA),
+						// 		il.Const(1, instr.operands[0].immediate)))
+					));
+				else
+				/* eg: 04 D4    mov.l 0x004021f2, r4 */
+				if(instr.operands_n == 2 && instr.operands[0].type == GPREG && instr.operands[1].type == GPREG)
+					il.AddInstruction(il.SetRegister(4,
+						instr.operands[1].regA,
+						il.Add(4, il.Register(4, instr.operands[1].regA),
+							il.Register(4, instr.operands[0].regA))
+					));
+				else
+					il.AddInstruction(il.Unimplemented());
+				break;
+
+			case SUPERH_TST:
+				if(instr.operands_n == 2 && instr.operands[0].type == IMMEDIATE && instr.operands[1].type == GPREG)
+					il.AddInstruction(il.SetRegister(4,
+						SR,
+						il.CompareEqual(4,
+							il.Const(4, 0),
+							il.And(4, 
+								il.Register(4, instr.operands[1].regA),
+								il.ZeroExtend(4,
+									il.Const(1, instr.operands[0].immediate))))
+					));
+				else
+				/* eg: 04 D4    mov.l 0x004021f2, r4 */
+				if(instr.operands_n == 2 && instr.operands[0].type == GPREG && instr.operands[1].type == GPREG)
+					il.AddInstruction(il.SetRegister(4,
+						SR,
+						il.CompareEqual(4,
+							il.Const(4, 0),
+							il.And(4, 
+								il.Register(4, instr.operands[0].regA),
+								il.Register(4, instr.operands[1].regA)))
+					));
+				else
+					il.AddInstruction(il.Unimplemented());
+				break;
+
+			case SUPERH_CMP:
+				switch (instr.cond)
+				{
+				case CMP_COND_EQ:
+					il.AddInstruction(il.SetRegister(4, SR,
+						il.CompareEqual(4,
+							instr.operands[0].type == IMMEDIATE
+								? il.Const(4, instr.operands[0].immediate)
+								: il.Register(4, instr.operands[0].regA),
+							il.Register(4, instr.operands[1].regA))
+						));
+					break;
+				case CMP_COND_GE:
+					il.AddInstruction(il.SetRegister(4, SR,
+						il.CompareSignedGreaterEqual(4,
+							il.Register(4, instr.operands[0].regA),
+							il.Register(4, instr.operands[1].regA))
+						));
+					break;
+				case CMP_COND_GT:
+					il.AddInstruction(il.SetRegister(4, SR,
+						il.CompareSignedGreaterThan(4,
+							il.Register(4, instr.operands[0].regA),
+							il.Register(4, instr.operands[1].regA))
+						));
+					break;
+				case CMP_COND_HI:
+					il.AddInstruction(il.SetRegister(4, SR,
+						il.CompareUnsignedGreaterThan(4,
+							il.Register(4, instr.operands[0].regA),
+							il.Register(4, instr.operands[1].regA))
+						));
+					break;
+				case CMP_COND_HS:
+					il.AddInstruction(il.SetRegister(4, SR,
+						il.CompareUnsignedGreaterEqual(4,
+							il.Register(4, instr.operands[0].regA),
+							il.Register(4, instr.operands[1].regA))
+						));
+					break;
+				case CMP_COND_PL:
+					il.AddInstruction(il.SetRegister(4, SR,
+						il.CompareSignedGreaterThan(4,
+							il.Register(4, instr.operands[0].regA),
+							il.Const(4, 0))
+						));
+					break;
+				case CMP_COND_PZ:
+					il.AddInstruction(il.SetRegister(4, SR,
+						il.CompareSignedGreaterEqual(4,
+							il.Register(4, instr.operands[0].regA),
+							il.Const(4, 0))
+						));
+					break;
+				case CMP_COND_STR:
+				default:
+					il.AddInstruction(il.Unimplemented());
+					break;
+				}
+				break;
+
 			default:
-				il.AddInstruction(il.Nop());
+				il.AddInstruction(il.Unimplemented());
 		}
 
 		len = 2;
@@ -539,26 +691,33 @@ public:
 };
 
 
-class LinuxSH4Platform: public Platform
-{
-public:
-	LinuxSH4Platform(Architecture* arch): Platform(arch, "linux-sh4")
-	{
-		Ref<CallingConvention> cc;
+// class LinuxSH4Platform: public Platform
+// {
+// public:
+// 	LinuxSH4Platform(Architecture* arch): Platform(arch, "linux-sh4")
+// 	{
+// 		Ref<CallingConvention> cc;
 
-		cc = arch->GetCallingConventionByName("sh4-standard");
-		if(cc)
-			RegisterDefaultCallingConvention(cc);
+// 		cc = arch->GetCallingConventionByName("sh4-standard");
+// 		if(cc)
+// 			RegisterDefaultCallingConvention(cc);
 
-		cc = arch->GetCallingConventionByName("linux-syscall");
-		if(cc)
-			SetSystemCallConvention(cc);
-	}
-};
+// 		cc = arch->GetCallingConventionByName("linux-syscall");
+// 		if(cc)
+// 			SetSystemCallConvention(cc);
+// 	}
+// };
 
 extern "C"
 {
 	BN_DECLARE_CORE_ABI_VERSION
+
+#ifndef DEMO_VERSION
+	BINARYNINJAPLUGIN void CorePluginDependencies()
+	{
+		AddOptionalPluginDependency("view_pe");
+	}
+#endif
 
 #ifdef DEMO_VERSION
 	bool Sh4PluginInit()
@@ -583,11 +742,11 @@ extern "C"
 		archSh4->SetDefaultCallingConvention(conv);
 
 		/* 3) platform */
-		Ref<Platform> platform;
-		platform = new LinuxSH4Platform(archSh4);
-		Platform::Register("linux", platform);
-		BinaryViewType::RegisterPlatform("ELF", 0, archSh4, platform);
-		BinaryViewType::RegisterPlatform("ELF", EM_SUPERH, archSh4, platform);
+		// Ref<Platform> platform;
+		// platform = new LinuxSH4Platform(archSh4);
+		// Platform::Register("linux", platform);
+		// BinaryViewType::RegisterPlatform("ELF", 0, archSh4, platform);
+		// BinaryViewType::RegisterPlatform("ELF", EM_SUPERH, archSh4, platform);
 
 		/* 4) binary view */
 		BinaryViewType::RegisterArchitecture("ELF", EM_SUPERH, LittleEndian, archSh4);
