@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -82,11 +83,11 @@ int superh_disassemble(Instruction *instr, char *result, size_t buf_sz)
 				strcat(result, superh_reg_strs[instr->operands[i].regA]);
 				break;
 			case IMMEDIATE:
-				sprintf(buf, "#%d", instr->operands[i].immediate);
+				snprintf(buf, sizeof(buf), "#%d", instr->operands[i].immediate);
 				strcat(result, buf);
 				break;
 			case ADDRESS:
-				sprintf(buf, "0x%016llx", instr->operands[i].address);
+				snprintf(buf, sizeof(buf), "0x%016" PRIx64, instr->operands[i].address);
 				strcat(result, buf);
 				break;
 			case DEREF_REG:
@@ -98,11 +99,11 @@ int superh_disassemble(Instruction *instr, char *result, size_t buf_sz)
 				if(instr->operands[i].flags & SUPERH_FLAG_POST_DECREMENT) strcat(result, "-");
 				break;
 			case DEREF_REG_REG:
-				sprintf(buf, "@(%s,%s)", superh_reg_strs[instr->operands[i].regA], superh_reg_strs[instr->operands[i].regB]);
+				snprintf(buf, sizeof(buf), "@(%s,%s)", superh_reg_strs[instr->operands[i].regA], superh_reg_strs[instr->operands[i].regB]);
 				strcat(result, buf);
 				break;
 			case DEREF_REG_IMM:
-				sprintf(buf, "@(%d,%s)", instr->operands[i].displacement, superh_reg_strs[instr->operands[i].regA]);
+				snprintf(buf, sizeof(buf), "@(%d,%s)", instr->operands[i].displacement, superh_reg_strs[instr->operands[i].regA]);
 				strcat(result, buf);
 				break;
 			default:
