@@ -91,6 +91,7 @@ struct Instruction
 	/* other flags */
 	bool privileged;
 	bool delay_slot;
+	int size;
 };
 
 #ifndef __cplusplus

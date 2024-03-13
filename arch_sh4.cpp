@@ -1,7 +1,9 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "binaryninjaapi.h"
+#include "lowlevelilinstruction.h"
 using namespace BinaryNinja; // for ::LogDebug, etc.
 using namespace std;
 
@@ -13,6 +15,216 @@ extern "C" {
 }
 
 #define IL_FLAG_T 1
+
+#define IL_FLAG_WRITE_NONE 0
+#define IL_FLAG_WRITE_ALL  1
+#define IL_FLAG_WRITE_ALL_FLOAT  2
+
+#define IL_FLAG_CLASS_INT 1
+#define IL_FLAG_CLASS_FLOAT 2
+
+bool GetLowLevelILForInstruction(Architecture* arch, uint64_t addr, LowLevelILFunction& il, Instruction& instr, size_t addrSize)
+{
+	switch(instr.operation) {
+
+		/* there are 3 "call subroutine" instructions in SH4 */
+		/* (1/3) JumpSubRoutine <reg> */
+		/* eg: 0B 41    jsr @r1 */
+		case SUPERH_JSR:
+			il.AddInstruction(il.Call(il.Register(4, instr.operands[0].regA)));
+			break;
+
+		/* (2/3) branch subroutine, PC = (PC+4) + 2*disp */
+		case SUPERH_BSR:
+			il.AddInstruction(il.Call(il.ConstPointer(4, instr.operands[0].address)));
+			break;
+
+		/* (3/3) branch subroutine far, PC = (PC+4) + Rn */
+		case SUPERH_BSRF:
+			il.AddInstruction(il.Call(
+				il.Add(4,
+					il.Add(4, il.Register(4, PC), il.Const(4, 4)),
+					il.Register(4, instr.operands[0].regA)
+				)
+			));
+			break;
+
+		case SUPERH_JMP:
+			il.AddInstruction(il.Jump(il.Register(4, instr.operands[0].regA)));
+			break;
+
+		case SUPERH_BT:
+		{
+			BNLowLevelILLabel* trueLabel = il.GetLabelForAddress(arch, instr.operands[0].address);
+			BNLowLevelILLabel* falseLabel = il.GetLabelForAddress(arch, instr.delay_slot ? addr + 4 : addr + 2);
+			il.AddInstruction(
+				il.If(
+					il.CompareNotEqual(1,
+						il.Flag(IL_FLAG_T), il.Const(1, 0)),
+					*trueLabel, *falseLabel)
+			);
+			break;
+		}
+
+		case SUPERH_BF:
+		{
+			BNLowLevelILLabel* trueLabel = il.GetLabelForAddress(arch, instr.operands[0].address);
+			BNLowLevelILLabel* falseLabel = il.GetLabelForAddress(arch, instr.delay_slot ? addr + 4 : addr + 2);
+			il.AddInstruction(
+				il.If(
+					il.CompareEqual(1,
+						il.Flag(IL_FLAG_T), il.Const(1, 0)),
+					*trueLabel, *falseLabel)
+			);
+			break;
+		}
+
+		case SUPERH_MOV:
+			/* eg: 00 EE    mov #0, r14 */
+			if(instr.operands_n == 2 && instr.operands[0].type == IMMEDIATE && instr.operands[1].type == GPREG)
+				il.AddInstruction(il.SetRegister(4,
+					instr.operands[1].regA,
+					il.Const(4, instr.operands[0].immediate)
+				));
+			else
+			/* eg: 04 D4    mov.l 0x004021f2, r4 */
+			if(instr.operands_n == 2 && instr.operands[0].type == ADDRESS && instr.operands[1].type == GPREG)
+				il.AddInstruction(il.SetRegister(4,
+					instr.operands[1].regA,
+					il.Load(4, il.ConstPointer(4, instr.operands[0].address))
+				));
+			else
+			/* eg: 53 60   mov r5,r0 */
+			if(instr.operands_n == 2 && instr.operands[0].type == GPREG && instr.operands[1].type == GPREG)
+				il.AddInstruction(il.SetRegister(4,
+					instr.operands[1].regA,
+					il.Register(4, instr.operands[0].regA)
+				));
+			else
+				il.AddInstruction(il.Unimplemented());
+
+			break;
+
+		/* return subroutine */
+		case SUPERH_RTS:
+			il.AddInstruction(il.Return(il.Register(4, PR)));
+			break;
+
+		case SUPERH_ADD:
+			if(instr.operands_n == 2 && instr.operands[0].type == IMMEDIATE && instr.operands[1].type == GPREG)
+				il.AddInstruction(il.SetRegister(4,
+					instr.operands[1].regA,
+					il.Add(4,
+						il.Register(4, instr.operands[1].regA),
+						il.SignExtend(4,
+							il.Const(1, instr.operands[0].immediate)))
+					// il.SignExtend(4,
+					// 	il.Add(4, il.Register(4, instr.operands[1].regA),
+					// 		il.Const(1, instr.operands[0].immediate)))
+				));
+			else
+			/* eg: 04 D4    mov.l 0x004021f2, r4 */
+			if(instr.operands_n == 2 && instr.operands[0].type == GPREG && instr.operands[1].type == GPREG)
+				il.AddInstruction(il.SetRegister(4,
+					instr.operands[1].regA,
+					il.Add(4, il.Register(4, instr.operands[1].regA),
+						il.Register(4, instr.operands[0].regA))
+				));
+			else
+				il.AddInstruction(il.Unimplemented());
+			break;
+
+		case SUPERH_TST:
+			if(instr.operands_n == 2 && instr.operands[0].type == IMMEDIATE && instr.operands[1].type == GPREG)
+				il.AddInstruction(il.SetFlag(IL_FLAG_T,
+					il.CompareEqual(4,
+						il.Const(4, 0),
+						il.And(4,
+							il.Register(4, instr.operands[1].regA),
+							il.ZeroExtend(4,
+								il.Const(1, instr.operands[0].immediate))))
+				));
+			else
+			/* eg: 04 D4    mov.l 0x004021f2, r4 */
+			if(instr.operands_n == 2 && instr.operands[0].type == GPREG && instr.operands[1].type == GPREG)
+				il.AddInstruction(il.SetFlag(IL_FLAG_T,
+					il.CompareEqual(4,
+						il.Const(4, 0),
+						il.And(4,
+							il.Register(4, instr.operands[0].regA),
+							il.Register(4, instr.operands[1].regA)))
+				));
+			else
+				il.AddInstruction(il.Unimplemented());
+			break;
+
+		case SUPERH_CMP:
+			switch (instr.cond)
+			{
+			case CMP_COND_EQ:
+				il.AddInstruction(il.SetFlag(IL_FLAG_T,
+					il.CompareEqual(4,
+						instr.operands[0].type == IMMEDIATE
+							? il.Const(4, instr.operands[0].immediate)
+							: il.Register(4, instr.operands[0].regA),
+						il.Register(4, instr.operands[1].regA))
+					));
+				break;
+			case CMP_COND_GE:
+				il.AddInstruction(il.SetFlag(IL_FLAG_T,
+					il.CompareSignedGreaterEqual(4,
+						il.Register(4, instr.operands[0].regA),
+						il.Register(4, instr.operands[1].regA))
+					));
+				break;
+			case CMP_COND_GT:
+				il.AddInstruction(il.SetFlag(IL_FLAG_T,
+					il.CompareSignedGreaterThan(4,
+						il.Register(4, instr.operands[0].regA),
+						il.Register(4, instr.operands[1].regA))
+					));
+				break;
+			case CMP_COND_HI:
+				il.AddInstruction(il.SetFlag(IL_FLAG_T,
+					il.CompareUnsignedGreaterThan(4,
+						il.Register(4, instr.operands[0].regA),
+						il.Register(4, instr.operands[1].regA))
+					));
+				break;
+			case CMP_COND_HS:
+				il.AddInstruction(il.SetFlag(IL_FLAG_T,
+					il.CompareUnsignedGreaterEqual(4,
+						il.Register(4, instr.operands[0].regA),
+						il.Register(4, instr.operands[1].regA))
+					));
+				break;
+			case CMP_COND_PL:
+				il.AddInstruction(il.SetFlag(IL_FLAG_T,
+					il.CompareSignedGreaterThan(4,
+						il.Register(4, instr.operands[0].regA),
+						il.Const(4, 0))
+					));
+				break;
+			case CMP_COND_PZ:
+				il.AddInstruction(il.SetFlag(IL_FLAG_T,
+					il.CompareSignedGreaterEqual(4,
+						il.Register(4, instr.operands[0].regA),
+						il.Const(4, 0))
+					));
+				break;
+			case CMP_COND_STR:
+			default:
+				il.AddInstruction(il.Unimplemented());
+				break;
+			}
+			break;
+
+		default:
+			il.AddInstruction(il.Unimplemented());
+	}
+
+	return true;
+}
 
 /*****************************************************************************/
 /* the architecture class */
@@ -262,209 +474,151 @@ class SH4Architecture: public Architecture
 		if(!(instr.operation > SUPERH_ERROR && instr.operation <= SUPERH_XTRCT)) {
 			return false;
 		}
-		switch(instr.operation) {
 
-			/* there are 3 "call subroutine" instructions in SH4 */
-			/* (1/3) JumpSubRoutine <reg> */
-			/* eg: 0B 41    jsr @r1 */
-			case SUPERH_JSR:
-				il.AddInstruction(il.Call(il.Register(4, instr.operands[0].regA)));
-				break;
-
-			/* (2/3) branch subroutine, PC = (PC+4) + 2*disp */
-			case SUPERH_BSR:
-				il.AddInstruction(il.Call(il.ConstPointer(4, instr.operands[0].address)));
-				break;
-
-			/* (3/3) branch subroutine far, PC = (PC+4) + Rn */
-			case SUPERH_BSRF:
-				il.AddInstruction(il.Call(
-					il.Add(4,
-						il.Add(4, il.Register(4, PC), il.Const(4, 4)),
-						il.Register(4, instr.operands[0].regA)
-					)
-				));
-				break;
-
-			case SUPERH_JMP:
-				il.AddInstruction(il.Jump(il.Register(4, instr.operands[0].regA)));
-				break;
-
-			case SUPERH_BT:
+		if (instr.delay_slot)
+		{
+			if (len < 4)
 			{
-				LowLevelILLabel trueLabel, doneLabel;
-				il.AddInstruction(
-					il.If(
-						il.TestBit(1, il.Register(4, SR), il.Const(1, 0)),
-						trueLabel, doneLabel));
-				il.MarkLabel(trueLabel);
-				il.Jump(il.ConstPointer(4, instr.operands[0].address));
-				il.MarkLabel(doneLabel);
-				break;
+				LogWarn("Can not lift instruction with delay slot @ 0x%08" PRIx64, addr);
+				return false;
 			}
 
-			case SUPERH_BF:
-			{
-				LowLevelILLabel falseLabel, doneLabel;
-				il.AddInstruction(
-					il.If(
-						il.Not(1, il.TestBit(1, il.Register(4, SR), il.Const(1, 0))),
-						falseLabel, doneLabel));
-				il.MarkLabel(falseLabel);
-				il.Jump(il.ConstPointer(4, instr.operands[0].address));
-				il.MarkLabel(doneLabel);
-				break;
+			Instruction secondInstr;
+			memset(&secondInstr, 0, sizeof(secondInstr));
+			uint16_t insword2 = *(uint16_t *)(data + 2);
+			if(endian == BigEndian)
+				insword2 = (data[2]<<8) | data[3];
+			if(superh_decompose(insword2, &secondInstr, addr + 2) != 0) {
+				il.AddInstruction(il.Undefined());
+				return false;
 			}
 
-			case SUPERH_MOV:
-				/* eg: 00 EE    mov #0, r14 */
-				if(instr.operands_n == 2 && instr.operands[0].type == IMMEDIATE && instr.operands[1].type == GPREG)
-					il.AddInstruction(il.SetRegister(4,
-						instr.operands[1].regA,
-						il.Const(4, instr.operands[0].immediate)
-					));
-				else
-				/* eg: 04 D4    mov.l 0x004021f2, r4 */
-				if(instr.operands_n == 2 && instr.operands[0].type == ADDRESS && instr.operands[1].type == GPREG)
-					il.AddInstruction(il.SetRegister(4,
-						instr.operands[1].regA,
-						il.Load(4, il.ConstPointer(4, instr.operands[0].address))
-					));
-				else
-				/* eg: 53 60   mov r5,r0 */
-				if(instr.operands_n == 2 && instr.operands[0].type == GPREG && instr.operands[1].type == GPREG)
-					il.AddInstruction(il.SetRegister(4,
-						instr.operands[1].regA,
-						il.Register(4, instr.operands[0].regA)
-					));
-				else
-					il.AddInstruction(il.Unimplemented());
-
-				break;
-
-			/* return subroutine */
-			case SUPERH_RTS:
-				il.AddInstruction(il.Return(il.Register(4, PR)));
-				break;
-
-			case SUPERH_ADD:
-				if(instr.operands_n == 2 && instr.operands[0].type == IMMEDIATE && instr.operands[1].type == GPREG)
-					il.AddInstruction(il.SetRegister(4,
-						instr.operands[1].regA,
-						il.Add(4, 
-							il.Register(4, instr.operands[1].regA),
-							il.SignExtend(4,
-								il.Const(1, instr.operands[0].immediate)))
-						// il.SignExtend(4,
-						// 	il.Add(4, il.Register(4, instr.operands[1].regA),
-						// 		il.Const(1, instr.operands[0].immediate)))
-					));
-				else
-				/* eg: 04 D4    mov.l 0x004021f2, r4 */
-				if(instr.operands_n == 2 && instr.operands[0].type == GPREG && instr.operands[1].type == GPREG)
-					il.AddInstruction(il.SetRegister(4,
-						instr.operands[1].regA,
-						il.Add(4, il.Register(4, instr.operands[1].regA),
-							il.Register(4, instr.operands[0].regA))
-					));
-				else
-					il.AddInstruction(il.Unimplemented());
-				break;
-
-			case SUPERH_TST:
-				if(instr.operands_n == 2 && instr.operands[0].type == IMMEDIATE && instr.operands[1].type == GPREG)
-					il.AddInstruction(il.SetRegister(4,
-						SR,
-						il.CompareEqual(4,
-							il.Const(4, 0),
-							il.And(4, 
-								il.Register(4, instr.operands[1].regA),
-								il.ZeroExtend(4,
-									il.Const(1, instr.operands[0].immediate))))
-					));
-				else
-				/* eg: 04 D4    mov.l 0x004021f2, r4 */
-				if(instr.operands_n == 2 && instr.operands[0].type == GPREG && instr.operands[1].type == GPREG)
-					il.AddInstruction(il.SetRegister(4,
-						SR,
-						il.CompareEqual(4,
-							il.Const(4, 0),
-							il.And(4, 
-								il.Register(4, instr.operands[0].regA),
-								il.Register(4, instr.operands[1].regA)))
-					));
-				else
-					il.AddInstruction(il.Unimplemented());
-				break;
-
-			case SUPERH_CMP:
-				switch (instr.cond)
+			bool status = true;
+			if (false && (instr.operation == SUPERH_BT || instr.operation == SUPERH_BF))
+			{
+				InstructionInfo instrInfo;
+				LowLevelILLabel trueCode, falseCode;
+				GetInstructionInfo(data, addr, len, instrInfo);
+				il.AddInstruction(
+					il.If(instr.operation == SUPERH_BT
+						? il.CompareNotEqual(1, il.Flag(IL_FLAG_T), il.Const(1, 0))
+						: il.CompareEqual(1, il.Flag(IL_FLAG_T), il.Const(1, 0)),
+					trueCode, falseCode)
+				);
+				il.MarkLabel(trueCode);
+				il.SetCurrentAddress(this, addr + instr.size);
+				GetLowLevelILForInstruction(this, addr + instr.size, il, secondInstr, GetAddressSize());
+				for (size_t i = 0; i < instrInfo.branchCount; i++)
 				{
-				case CMP_COND_EQ:
-					il.AddInstruction(il.SetRegister(4, SR,
-						il.CompareEqual(4,
-							instr.operands[0].type == IMMEDIATE
-								? il.Const(4, instr.operands[0].immediate)
-								: il.Register(4, instr.operands[0].regA),
-							il.Register(4, instr.operands[1].regA))
-						));
-					break;
-				case CMP_COND_GE:
-					il.AddInstruction(il.SetRegister(4, SR,
-						il.CompareSignedGreaterEqual(4,
-							il.Register(4, instr.operands[0].regA),
-							il.Register(4, instr.operands[1].regA))
-						));
-					break;
-				case CMP_COND_GT:
-					il.AddInstruction(il.SetRegister(4, SR,
-						il.CompareSignedGreaterThan(4,
-							il.Register(4, instr.operands[0].regA),
-							il.Register(4, instr.operands[1].regA))
-						));
-					break;
-				case CMP_COND_HI:
-					il.AddInstruction(il.SetRegister(4, SR,
-						il.CompareUnsignedGreaterThan(4,
-							il.Register(4, instr.operands[0].regA),
-							il.Register(4, instr.operands[1].regA))
-						));
-					break;
-				case CMP_COND_HS:
-					il.AddInstruction(il.SetRegister(4, SR,
-						il.CompareUnsignedGreaterEqual(4,
-							il.Register(4, instr.operands[0].regA),
-							il.Register(4, instr.operands[1].regA))
-						));
-					break;
-				case CMP_COND_PL:
-					il.AddInstruction(il.SetRegister(4, SR,
-						il.CompareSignedGreaterThan(4,
-							il.Register(4, instr.operands[0].regA),
-							il.Const(4, 0))
-						));
-					break;
-				case CMP_COND_PZ:
-					il.AddInstruction(il.SetRegister(4, SR,
-						il.CompareSignedGreaterEqual(4,
-							il.Register(4, instr.operands[0].regA),
-							il.Const(4, 0))
-						));
-					break;
-				case CMP_COND_STR:
-				default:
-					il.AddInstruction(il.Unimplemented());
-					break;
+					// if (instrInfo.branchType[i] == TrueBranch)
+					{
+						BNLowLevelILLabel* trueLabel = il.GetLabelForAddress(this, instrInfo.branchTarget[i]);
+						if (trueLabel)
+							il.AddInstruction(il.Goto(*trueLabel));
+						else
+							il.AddInstruction(il.Jump(il.ConstPointer(GetAddressSize(), instrInfo.branchTarget[i])));
+						break;
+					}
 				}
-				break;
+				il.MarkLabel(falseCode);
+			}
+			else
+			{
+				size_t nop;
 
-			default:
-				il.AddInstruction(il.Unimplemented());
+				// ensure we have space to preserve one register in case the delay slot
+				// clobbers a value needed by the branch. this will be eliminated when
+				// normal LLIL is generated from Lifted IL if we don't need it
+				il.SetCurrentAddress(this, addr + instr.size);
+				nop = il.Nop();
+				il.AddInstruction(nop);
+
+				GetLowLevelILForInstruction(this, addr + instr.size, il, secondInstr, GetAddressSize());
+
+				LowLevelILInstruction delayed;
+				uint32_t clobbered = BN_INVALID_REGISTER;
+				size_t instrIdx = il.GetInstructionCount();
+				if (instrIdx != 0)
+				{
+					// FIXME: this assumes that the instruction in the delay slot
+					// only changed registers in the last IL instruction that it
+					// added -- strictly speaking we should be starting from the
+					// first instruction that could have been added and follow all
+					// paths to the end of that instruction.
+					delayed = il.GetInstruction(instrIdx - 1);
+					if ((delayed.operation == LLIL_SET_REG) && (delayed.address == (addr + instr.size)))
+						clobbered = delayed.GetDestRegister<LLIL_SET_REG>();
+					else if ((delayed.operation == LLIL_SET_FLAG) && (delayed.address == (addr + instr.size)))
+						clobbered = delayed.GetDestFlag<LLIL_SET_FLAG>();
+				}
+
+				il.SetCurrentAddress(this, addr);
+
+				// if ((instr.operation == MIPS_JR) && (instr.operands[0].reg == REG_T9) &&
+				// 		(secondInstr.operation == MIPS_ADDIU) && (secondInstr.operands[0].reg == REG_SP) &&
+				// 		(secondInstr.operands[1].reg == REG_SP) && (secondInstr.operands[2].immediate < 0x80000000))
+				// {
+				// 	il.AddInstruction(il.TailCall(il.Register(4, REG_T9)));
+				// }
+				if (false) {}
+				else
+				{
+					status = GetLowLevelILForInstruction(this, addr, il, instr, GetAddressSize());
+				}
+
+				if (clobbered != BN_INVALID_REGISTER)
+				{
+					// FIXME: this approach will break with any of the REG_SPLIT operations as well
+					// any use of partial registers -- this approach needs to be expanded substantially
+					// to be correct in the general case. also, it uses LLIL_TEMP(1) for the simple reason
+					// that the mips lifter only uses LLIL_TEMP(0) at the moment.
+					LowLevelILInstruction lifted = il.GetInstruction(instrIdx);
+					if ((lifted.operation == LLIL_IF || lifted.operation == LLIL_CALL) && (lifted.address == addr))
+					{
+						int replace = 0;
+
+						lifted.VisitExprs([&](const LowLevelILInstruction& expr) -> bool {
+							if (expr.operation == LLIL_REG && expr.GetSourceRegister<LLIL_REG>() == clobbered)
+							{
+								// Replace all reads from the clobbered register to a temp register
+								// that we're going to set (by replacing the earlier nop we added)
+								il.ReplaceExpr(expr.exprIndex, il.Register(expr.size, LLIL_TEMP(1)));
+								replace = LLIL_REG;
+							}
+							else if (expr.operation == LLIL_FLAG && expr.GetSourceFlag<LLIL_FLAG>() == clobbered)
+							{
+								// Replace all reads from the clobbered register to a temp register
+								// that we're going to set (by replacing the earlier nop we added)
+								il.ReplaceExpr(expr.exprIndex, il.Register(expr.size, LLIL_TEMP(1)));
+								replace = LLIL_FLAG;
+							}
+							return true;
+						});
+
+						if (replace)
+						{
+							// Preserve the value of the clobbered register by replacing the LLIL_NOP
+							// instruction we added at the beginning with an assignment to the temp
+							// register we rewrote in the LLIL_IF condition expression
+							il.SetCurrentAddress(this, addr + instr.size);
+							if (replace == LLIL_REG)
+								il.ReplaceExpr(nop, il.SetRegister(delayed.size, LLIL_TEMP(1), il.Register(delayed.size, delayed.GetDestRegister<LLIL_SET_REG>())));
+							else
+								il.ReplaceExpr(nop, il.SetRegister(delayed.size, LLIL_TEMP(1), il.Flag(delayed.GetDestFlag<LLIL_SET_FLAG>())));
+							il.SetCurrentAddress(this, addr);
+						}
+					}
+				}
+			}
+
+			len = instr.size + secondInstr.size;
+			return status;
 		}
 
-		len = 2;
-		return true;
+		len = instr.size;
+		return GetLowLevelILForInstruction(this, addr, il, instr, GetAddressSize());
 	}
+
 
 	virtual size_t GetFlagWriteLowLevelIL(BNLowLevelILOperation op, size_t size, uint32_t flagWriteType,
 		uint32_t flag, BNRegisterOrConstant* operands, size_t operandCount, LowLevelILFunction& il) override
@@ -485,31 +639,51 @@ class SH4Architecture: public Architecture
 	virtual vector<uint32_t> GetAllFlags() override
 	{
 		//printf("%s()\n", __func__);
-		return vector<uint32_t>();
+		return vector<uint32_t> {IL_FLAG_T};
 	}
 
 	virtual string GetFlagName(uint32_t flag) override
 	{
 		//printf("%s(%d)\n", __func__, flag);
+		switch (flag)
+		{
+		case IL_FLAG_T:
+			return "T";
+		}
 		return "ERR_FLAG_NAME";
 	}
 
+	/* flag write types */
+
 	virtual vector<uint32_t> GetAllFlagWriteTypes() override
 	{
-		//printf("%s()\n", __func__);
-		return vector<uint32_t>();
+		return vector<uint32_t> {IL_FLAG_WRITE_ALL, IL_FLAG_WRITE_ALL_FLOAT};
 	}
 
-	virtual string GetFlagWriteTypeName(uint32_t writeType) override
+
+	virtual string GetFlagWriteTypeName(uint32_t flags) override
 	{
-		//printf("%s(%d)\n", __func__, writeType);
-		return "none";
+		switch (flags)
+		{
+		case IL_FLAG_WRITE_ALL:
+			return "*";
+		case IL_FLAG_WRITE_ALL_FLOAT:
+			return "f*";
+		default:
+			return "";
+		}
 	}
 
 	virtual vector<uint32_t> GetFlagsWrittenByFlagWriteType(uint32_t writeType) override
 	{
-		//printf("%s(%d)\n", __func__, writeType);
-		return vector<uint32_t>();
+		switch (writeType)
+		{
+		case IL_FLAG_WRITE_ALL:
+		case IL_FLAG_WRITE_ALL_FLOAT:
+			return vector<uint32_t> {IL_FLAG_T};
+		default:
+			return vector<uint32_t> {};
+		}
 	}
 
 	virtual BNFlagRole GetFlagRole(uint32_t flag, uint32_t semClass = 0) override
